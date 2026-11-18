@@ -828,6 +828,7 @@ function host() {
       <div class="url">${esc(joinUrl)}</div>
       <div class="names" id="lnames"></div>
       <div class="pl" id="lcount">0 ISHTIROKCHI</div>
+      <button class="cbtn" id="lreset" style="position:absolute;left:2vw;top:2vh">↺ Xonani tozalash</button>
       <button class="pbtn go" id="lgo">▶ INTRONI BOSHLASH</button>
     </div>
     <div id="stage" class="hidden">
@@ -845,6 +846,9 @@ function host() {
     </div>`;
 
   $("#lgo").onclick = () => { ac(); startIntro(); };
+  $("#lreset").onclick = async () => { if (!$("#lreset").dataset.ok) { $("#lreset").dataset.ok = 1; $("#lreset").textContent = "Rostdan tozalaysizmi? Yana bosing"; return; }
+    await DB.set(R, null); location.reload(); };
+  $("#stage").addEventListener("dblclick", e => { if (e.target.closest(".topbar")) { st = { slide: -1, phase: "show" }; write(); lastKey = ""; render(true); } });
   $("#bnext").onclick = () => next();
   $("#bprev").onclick = () => prev();
   $("#bmute").onclick = () => { setMuted(!muted); $("#bmute").textContent = muted ? "🔇" : "🔊"; };
