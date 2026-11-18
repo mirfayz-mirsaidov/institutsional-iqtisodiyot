@@ -1,0 +1,1 @@
+# institutsional-iqtisodiyot
