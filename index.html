@@ -1,0 +1,1280 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>MIT, Yale va Stanford — jonli dars</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+
+:root{
+  --bg1:#1d2a5c; --bg2:#121937; --ink:#eef1ff; --mut:#9aa6d6; --gold:#f7c948; --teal:#3ee6c4;
+  --red:#ff4d6d; --card:rgba(255,255,255,.055); --line:rgba(255,255,255,.12);
+  --A:#e5355f; --B:#2f74e8; --C:#d39b12; --D:#18a865;
+  --mono:'JetBrains Mono',ui-monospace,monospace; --sans:'Plus Jakarta Sans',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg2);color:var(--ink);font-family:var(--sans);overflow:hidden}
+button{font-family:inherit;cursor:pointer;border:0}
+.hidden{display:none!important}
+
+/* ---------- fon ---------- */
+#bgwrap{position:fixed;inset:0;background:radial-gradient(1200px 700px at 30% 0%,#2a3a7a 0%,var(--bg1) 35%,var(--bg2) 100%);z-index:0}
+#net{position:absolute;inset:0;width:100%;height:100%}
+
+/* ---------- host sahna ---------- */
+#stage{position:fixed;inset:0;z-index:2;display:flex;flex-direction:column;padding:2.2vh 3.2vw 2vh}
+.topbar{display:flex;justify-content:space-between;align-items:center;font-family:var(--mono);font-size:1.45vh;letter-spacing:.12em;color:var(--gold);padding-bottom:1.3vh;border-bottom:1px solid var(--line)}
+.topbar .r{color:var(--mut)} .topbar .live{color:var(--teal)}
+#slide{flex:1;position:relative;overflow:hidden;padding-top:3vh}
+.bottombar{display:flex;justify-content:space-between;align-items:center;padding-top:1.4vh}
+.joinbox{display:flex;align-items:center;gap:1.1vw;font-family:var(--mono);font-size:1.5vh;color:var(--mut);letter-spacing:.08em}
+.joinbox .qr{width:6.4vh;height:6.4vh;background:#fff;border-radius:6px;padding:3px}
+.joinbox .qr svg{width:100%;height:100%;display:block}
+.joinbox b{color:var(--gold);font-size:2.2vh}
+.ctrls{display:flex;gap:.6vw;align-items:center}
+.cbtn{background:rgba(255,255,255,.08);color:var(--ink);height:4.6vh;min-width:4.6vh;border-radius:10px;font-size:1.8vh;padding:0 1vw;border:1px solid var(--line)}
+.cbtn:hover{background:rgba(255,255,255,.16)}
+.pbtn{background:linear-gradient(180deg,#ffd666,#f0b429);color:#2a1d00;font-weight:800;height:5vh;border-radius:12px;font-size:2vh;padding:0 1.8vw;box-shadow:0 4px 0 #b9850f,0 8px 24px rgba(247,201,72,.25)}
+.pbtn:active{transform:translateY(2px);box-shadow:0 2px 0 #b9850f}
+
+/* ---------- slayd elementlari ---------- */
+.a{opacity:0;transform:translateY(22px);animation:up .7s cubic-bezier(.2,.8,.2,1) forwards;animation-delay:calc(var(--d,0)*.12s + .05s)}
+@keyframes up{to{opacity:1;transform:none}}
+.kick{font-family:var(--mono);font-size:1.6vh;letter-spacing:.32em;color:var(--gold);text-transform:uppercase;margin-bottom:1.4vh}
+h1.t{font-size:5.6vh;font-weight:800;line-height:1.08;letter-spacing:-.02em}
+h1.t em{font-style:normal;color:var(--gold)} h1.t i{font-style:normal;color:var(--teal)}
+.sub{font-size:2.3vh;color:var(--mut);margin-top:1vh}
+.center{height:100%;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center}
+.big{font-size:9vh;font-weight:800;letter-spacing:-.03em;line-height:1}
+.grad{background:linear-gradient(90deg,var(--gold),var(--teal));-webkit-background-clip:text;background-clip:text;color:transparent}
+.cards{display:grid;gap:1.6vw;margin-top:3vh}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:2.4vh 1.6vw;position:relative;overflow:hidden}
+.card.top{border-top:3px solid var(--teal)} .card.gold{border-top:3px solid var(--gold)} .card.red{border-top:3px solid var(--red)}
+.card h3{font-size:2.6vh;font-weight:800;margin-bottom:.6vh}
+.card .ic{font-size:3.6vh;margin-bottom:1vh}
+.card p{font-size:2vh;line-height:1.45;color:#d9def7}
+.card .tag{font-family:var(--mono);font-size:1.4vh;color:var(--gold);letter-spacing:.15em;margin-bottom:.8vh;text-transform:uppercase}
+.card .num{font-size:4.6vh;font-weight:800;color:var(--gold);margin:.6vh 0}
+.src{position:absolute;bottom:0;left:0;font-family:var(--mono);font-size:1.35vh;color:var(--mut);letter-spacing:.06em}
+.take{margin-top:2.6vh;border-left:4px solid var(--gold);background:var(--card);padding:1.8vh 1.4vw;border-radius:0 12px 12px 0;font-size:2.3vh;font-weight:700}
+.take span{color:var(--gold)}
+
+/* timeline */
+.tl{position:relative;margin-top:6vh;display:grid;gap:1vw}
+.tl:before{content:"";position:absolute;left:0;right:0;top:4.4vh;height:3px;background:linear-gradient(90deg,var(--gold),var(--teal));transform-origin:left;animation:grow 1.6s .3s ease forwards;transform:scaleX(0)}
+@keyframes grow{to{transform:scaleX(1)}}
+.tl .it{text-align:center;padding:0 .4vw}
+.tl .y{font-family:var(--mono);font-size:3.2vh;color:var(--gold);font-weight:700}
+.tl .dot{width:1.8vh;height:1.8vh;border-radius:50%;background:var(--gold);margin:1vh auto 1.6vh;box-shadow:0 0 0 6px rgba(247,201,72,.2)}
+.tl .tt{font-size:2.15vh;font-weight:700;line-height:1.3}
+.tl .ts{font-size:1.75vh;color:var(--mut);margin-top:.6vh;line-height:1.35}
+
+/* flow */
+.flow{display:flex;align-items:stretch;gap:.8vw;margin-top:5vh}
+.flow .st{flex:1;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:2.6vh 1vw;text-align:center}
+.flow .st .ic{font-size:5vh} .flow .st h3{font-size:2.7vh;margin:1vh 0 .6vh} .flow .st p{font-size:1.8vh;color:var(--mut);line-height:1.35}
+.flow .ar{align-self:center;font-size:4vh;color:var(--gold)}
+
+/* stats */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1.6vw;margin-top:5vh}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:4vh 1.4vw;text-align:center}
+.stat .v{font-size:7.5vh;font-weight:800;color:var(--gold);letter-spacing:-.02em}
+.stat .l{font-size:2.1vh;color:#d9def7;margin-top:1vh}
+.chips{display:flex;flex-wrap:wrap;gap:.8vw;margin-top:3vh}
+.chip{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:1vh 1.4vw;font-size:2.1vh;font-weight:700}
+
+/* ---------- test (host) ---------- */
+.qhead{display:flex;justify-content:space-between;align-items:flex-start;gap:2vw}
+.qhead h1{font-size:4.4vh;font-weight:800;line-height:1.15;max-width:72vw}
+.timer{width:13vh;height:13vh;border-radius:50%;border:.9vh solid var(--gold);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:5vh;font-weight:700;flex:none;transition:border-color .3s}
+.timer.low{border-color:var(--red);color:var(--red);animation:pulse .5s infinite alternate}
+@keyframes pulse{to{transform:scale(1.06)}}
+.acount{font-size:2.2vh;color:var(--mut);margin-top:1.2vh}
+.acount b{color:var(--ink)}
+.answers{display:grid;grid-template-columns:1fr 1fr;gap:1.2vw;margin-top:4vh;position:relative}
+.ans{border-radius:14px;padding:2.6vh 1.4vw;font-size:2.5vh;font-weight:700;display:flex;align-items:center;gap:1.2vw;position:relative;overflow:hidden;min-height:11vh;transition:opacity .5s,filter .5s,transform .5s}
+.ans .sh{font-size:3vh;width:4vh;text-align:center;flex:none}
+.ans .cnt{position:absolute;right:1.2vw;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:3vh}
+.ans .bar{position:absolute;left:0;bottom:0;height:.8vh;background:rgba(255,255,255,.6);transition:width 1s}
+.ans.A{background:var(--A)} .ans.B{background:var(--B)} .ans.C{background:var(--C)} .ans.D{background:var(--D)}
+.answers.reveal .ans.wrong{opacity:.25;filter:grayscale(.6)}
+.answers.reveal .ans.right{transform:scale(1.03);box-shadow:0 0 0 4px #fff,0 0 40px rgba(255,255,255,.35)}
+.answers.locked .ans{filter:blur(6px) brightness(.7)}
+.lock{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:3;text-align:center}
+.lock .pad{font-size:7vh;animation:wob 1.2s infinite ease-in-out}
+@keyframes wob{50%{transform:rotate(-8deg)}}
+.lock h2{font-size:4vh;font-weight:800;margin-top:1vh;text-shadow:0 2px 20px #000}
+.lock p{font-size:2vh;color:#dfe4ff;margin-top:.6vh}
+
+/* ---------- lobby ---------- */
+#lobby{position:fixed;inset:0;z-index:5;background:radial-gradient(800px 600px at 50% 40%,#2a0f1a 0%,#07080d 60%);display:flex;flex-direction:column;align-items:center;justify-content:center}
+#lobby .bigqr{background:#fff;border-radius:20px;padding:2.2vh;width:58vh;height:58vh;box-shadow:0 0 80px rgba(255,77,109,.25)}
+#lobby .bigqr svg{width:100%;height:100%;display:block}
+#lobby h2{font-size:3.6vh;font-weight:800;margin-top:2.6vh}
+#lobby h2 span{color:var(--gold)}
+#lobby .url{font-family:var(--mono);color:var(--mut);font-size:1.7vh;margin-top:1vh}
+#lobby .pl{position:absolute;left:2vw;bottom:2vh;font-family:var(--mono);color:var(--mut);font-size:1.6vh;letter-spacing:.1em}
+#lobby .names{position:absolute;right:2vw;top:2vh;bottom:9vh;width:22vw;display:flex;flex-wrap:wrap;align-content:flex-start;gap:.5vw;overflow:hidden}
+#lobby .names span{background:rgba(255,255,255,.08);border-radius:999px;padding:.6vh .9vw;font-size:1.7vh;animation:up .4s forwards}
+#lobby .go{position:absolute;right:2vw;bottom:2vh}
+
+/* ---------- intro ---------- */
+#intro{position:fixed;inset:0;z-index:20;background:#000;overflow:hidden}
+#intro canvas{position:absolute;inset:0;width:100%;height:100%}
+#intro .scene{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 10vw}
+#intro .l1{font-family:var(--mono);letter-spacing:.5em;font-size:3.4vh;color:#f3eee4;opacity:0;animation:fin 1.4s forwards}
+#intro .l2{font-size:2.4vh;color:#a9a29a;margin-top:1.6vh;opacity:0;animation:fin 1.4s .6s forwards}
+#intro .yr{font-family:var(--mono);font-size:13vh;font-weight:700;color:#f7c948;opacity:0;animation:zin 1.2s forwards;text-shadow:0 0 40px rgba(247,201,72,.35)}
+#intro .pl{font-family:var(--mono);letter-spacing:.4em;font-size:2.2vh;color:#cfc8bd;margin-top:1vh;opacity:0;animation:fin 1s .5s forwards}
+#intro .tx{font-size:3.4vh;color:#f2f2f2;max-width:60vw;line-height:1.4;margin-top:3vh;opacity:0;animation:fin 1.4s 1.1s forwards}
+#intro .money{font-size:12vh;font-weight:800;color:#3ee6c4;font-family:var(--mono)}
+#intro .ml{font-size:2.6vh;color:#ddd;margin-top:.6vh}
+#intro .ttl{font-size:9vh;font-weight:800;letter-spacing:-.02em;opacity:0;animation:zin 1.6s forwards}
+#intro .out{animation:fout .8s forwards!important}
+@keyframes fin{to{opacity:1}} @keyframes fout{to{opacity:0;filter:blur(8px)}}
+@keyframes zin{from{opacity:0;transform:scale(1.25);filter:blur(12px)}to{opacity:1;transform:none;filter:none}}
+#intro .skip{position:absolute;right:2vw;bottom:2vh;background:rgba(255,255,255,.1);color:#ddd;padding:1vh 1.2vw;border-radius:8px;font-size:1.6vh;z-index:3}
+#intro .bars:before,#intro .bars:after{content:"";position:absolute;left:0;right:0;height:9vh;background:#000;z-index:2}
+#intro .bars:before{top:0} #intro .bars:after{bottom:0}
+#intro .flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:4}
+#intro .flash.on{animation:flash .9s}
+@keyframes flash{0%{opacity:.85}100%{opacity:0}}
+
+/* ---------- o'yin ---------- */
+.ggrid{display:grid;grid-template-columns:repeat(5,1fr);gap:1vw;margin-top:3vh}
+.cty{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:1.8vh 1vw;position:relative;min-height:17vh}
+.cty .fl{font-size:4.4vh} .cty h4{font-size:2.3vh;margin-top:.6vh} .cty .yy{font-family:var(--mono);color:var(--gold);font-size:1.6vh}
+.cty .sit{font-size:1.5vh;color:var(--mut);margin-top:.6vh;line-height:1.3}
+.cty .votes{display:flex;gap:4px;flex-wrap:wrap;margin-top:.8vh}
+.cty .votes i{width:1.2vh;height:1.2vh;border-radius:50%;display:block}
+.cty.taken{outline:3px solid var(--gc);box-shadow:0 0 30px var(--gc)}
+.cty .who{position:absolute;top:1vh;right:1vw;font-weight:800;font-size:1.6vh;color:var(--gc)}
+.groups{display:grid;grid-template-columns:repeat(3,1fr);gap:1.6vw;margin-top:3vh}
+.grp{border-radius:18px;padding:2.4vh 1.4vw;background:var(--card);border:2px solid var(--gc)}
+.grp h3{font-size:3.4vh;color:var(--gc)} .grp .n{font-size:1.8vh;color:var(--mut);margin:.6vh 0 1.2vh}
+.grp .mm{display:flex;flex-wrap:wrap;gap:.4vw}
+.grp .mm span{font-size:1.6vh;background:rgba(255,255,255,.07);padding:.4vh .7vw;border-radius:999px}
+.grp .cc{font-size:2.6vh;font-weight:800;margin-top:1vh}
+.grp .op{font-size:1.9vh;color:#dfe4ff;margin-top:1vh;line-height:1.35}
+.warp{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.warp .yc{font-family:var(--mono);font-size:18vh;font-weight:700;color:var(--gold);text-shadow:0 0 50px rgba(247,201,72,.5)}
+.warp .wl{font-size:3vh;color:var(--mut);letter-spacing:.3em;font-family:var(--mono)}
+.res{display:grid;grid-template-columns:1.1fr 1fr;gap:2vw;margin-top:2.4vh}
+.verdict{font-size:4vh;font-weight:800;margin-top:1vh}
+.verdict.good{color:var(--teal)} .verdict.bad{color:var(--red)}
+.fact{display:flex;gap:1vw;font-size:2.2vh;line-height:1.4;margin-top:1.8vh}
+.fact b{font-family:var(--mono);color:var(--gold)}
+.gdpbox{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:3vh 1.6vw;text-align:center}
+.gdpbox .v{font-size:8vh;font-weight:800}
+.alt{margin-top:2vh;font-size:1.9vh;color:var(--mut);line-height:1.4}
+
+/* reyting */
+.board{display:grid;grid-template-columns:1.2fr 1fr;gap:2.4vw;margin-top:3vh}
+.gbar{display:flex;align-items:center;gap:1vw;margin-bottom:2.4vh}
+.gbar .nm{width:9vw;font-size:2.6vh;font-weight:800}
+.gbar .tr{flex:1;height:6vh;background:rgba(255,255,255,.06);border-radius:12px;overflow:hidden}
+.gbar .fi{height:100%;border-radius:12px;width:0;transition:width 1.6s cubic-bezier(.2,.8,.2,1);display:flex;align-items:center;justify-content:flex-end;padding-right:1vw;font-family:var(--mono);font-weight:700;font-size:2.2vh;color:#000}
+.top5 li{list-style:none;display:flex;justify-content:space-between;font-size:2.4vh;padding:1.2vh 1vw;border-bottom:1px solid var(--line)}
+.top5 li b{font-family:var(--mono);color:var(--gold)}
+#confetti{position:fixed;inset:0;pointer-events:none;z-index:30}
+
+/* ---------- o'quvchi (telefon) ---------- */
+body.player{overflow:auto}
+#player{position:relative;z-index:2;min-height:100%;display:flex;flex-direction:column;padding:18px 16px 24px}
+.ph{display:flex;justify-content:space-between;align-items:center;font-family:var(--mono);font-size:12px;letter-spacing:.1em;color:var(--gold)}
+.ph .me{color:var(--ink);font-family:var(--sans);font-weight:700;font-size:14px;letter-spacing:0}
+.pbody{flex:1;display:flex;flex-direction:column;justify-content:center;padding:20px 0}
+.pcard{background:rgba(255,255,255,.07);border:1px solid var(--line);border-radius:18px;padding:22px 18px;text-align:center}
+.pcard h2{font-size:24px;font-weight:800;line-height:1.2}
+.pcard p{color:var(--mut);margin-top:8px;font-size:15px;line-height:1.45}
+.pin{width:100%;font-size:20px;padding:14px;border-radius:12px;border:2px solid var(--line);background:rgba(0,0,0,.25);color:#fff;margin-top:16px;text-align:center;font-family:inherit}
+.pgo{width:100%;margin-top:14px;font-size:19px;padding:15px;border-radius:12px}
+.gbadge{display:inline-block;padding:8px 16px;border-radius:999px;font-weight:800;font-size:18px;margin-top:12px;color:#fff}
+.pq{font-size:18px;font-weight:700;line-height:1.35;margin-bottom:16px}
+.pans{display:grid;gap:10px}
+.pans button{border-radius:14px;padding:18px 14px;font-size:17px;font-weight:700;color:#fff;text-align:left;display:flex;gap:12px;align-items:center;min-height:64px}
+.pans button .sh{font-size:20px;width:24px;text-align:center;flex:none}
+.pans button.A{background:var(--A)} .pans button.B{background:var(--B)} .pans button.C{background:var(--C)} .pans button.D{background:var(--D)}
+.pans button.sel{outline:4px solid #fff}
+.pans.locked button{filter:blur(4px) brightness(.6);pointer-events:none}
+.plist{display:grid;gap:8px}
+.plist button{background:rgba(255,255,255,.08);border:1px solid var(--line);color:#fff;border-radius:12px;padding:12px;font-size:16px;text-align:left;display:flex;gap:10px;align-items:center}
+.plist button.sel{background:var(--gc,#3d8bff);border-color:#fff}
+.plist button.dis{opacity:.35;pointer-events:none}
+.big-emoji{font-size:64px}
+.ok{color:var(--teal)} .no{color:var(--red)}
+.pts{font-size:40px;font-weight:800;font-family:var(--mono)}
+.pfoot{text-align:center;font-family:var(--mono);font-size:12px;color:var(--mut);margin-top:10px}
+#slide.noanim .a{animation:none;opacity:1;transform:none}
+.answers.reveal .ans.right{transform:scale(1.03)!important}
+/* --- kattaroq va markazlashgan joylashuv --- */
+.sl{min-height:100%;display:flex;flex-direction:column;justify-content:center;padding-bottom:4vh}
+.kick{font-size:1.9vh}
+h1.t{font-size:6.6vh}
+.sub{font-size:2.7vh}
+.cards{gap:1.8vw;margin-top:3.6vh}
+.card{padding:3vh 1.8vw}
+.card h3{font-size:3.1vh} .card p{font-size:2.4vh} .card .num{font-size:5.6vh} .card .ic{font-size:4.4vh} .card .tag{font-size:1.6vh}
+.take{font-size:2.8vh;margin-top:3.4vh;padding:2.2vh 1.6vw}
+.tl{margin-top:7vh} .tl:before{top:5vh}
+.tl .y{font-size:4vh} .tl .tt{font-size:2.6vh} .tl .ts{font-size:2.1vh}
+.flow .st{padding:3.4vh 1vw} .flow .st .ic{font-size:6.4vh} .flow .st h3{font-size:3.2vh} .flow .st p{font-size:2.2vh}
+.stat{padding:5vh 1.4vw} .stat .v{font-size:9.5vh} .stat .l{font-size:2.7vh}
+.chip{font-size:2.5vh;padding:1.2vh 1.6vw}
+.qhead h1{font-size:5vh}
+.acount{font-size:2.6vh}
+.ans{font-size:3vh;min-height:14vh;padding:3vh 1.6vw}
+.answers{gap:1.4vw;margin-top:5vh}
+.timer{width:15vh;height:15vh;font-size:6vh}
+.cty{min-height:21vh;padding:2.2vh 1vw} .cty .fl{font-size:5.4vh} .cty h4{font-size:2.8vh} .cty .yy{font-size:1.9vh} .cty .sit{font-size:1.8vh}
+.cty .votes i{width:1.6vh;height:1.6vh}
+.grp h3{font-size:3.8vh} .grp .cc{font-size:3vh} .grp .op{font-size:2.15vh} .grp .n{font-size:2vh} .grp .mm span{font-size:2vh}
+.verdict{font-size:5vh} .fact{font-size:2.6vh;margin-top:2.4vh}
+.gdpbox .v{font-size:9vh} .alt{font-size:2.2vh}
+.gbar .nm{font-size:3.2vh;width:11vw} .gbar .tr{height:7.5vh} .top5 li{font-size:2.8vh}
+
+</style>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+<script>window.qrcode||document.write('<script src="https://unpkg.com/qrcode-generator@1.4.4/qrcode.js"><\/script>')</script>
+<script>
+// Firebase sozlamalari — institutsional-iqtisodiyot loyihasi
+// Realtime Database: Belgium (europe-west1). Qoidalar: faqat /rooms/* ochiq.
+window.FIREBASE_CONFIG = {
+  apiKey: "AIzaSyAJmYfKV2QKoj-5dZynVmkwIRvlR87DOFs",
+  authDomain: "institutsional-iqtisodiyot.firebaseapp.com",
+  databaseURL: "https://institutsional-iqtisodiyot-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "institutsional-iqtisodiyot",
+  storageBucket: "institutsional-iqtisodiyot.firebasestorage.app",
+  messagingSenderId: "1020709188363",
+  appId: "1:1020709188363:web:787942bb098d41921ee80e"
+};
+
+</script>
+<script>
+// =====================================================================
+//  MA'LUMOTLAR: testlar, o'yin davlatlari va natijalar (faktlar)
+// =====================================================================
+
+// ---------- 10 ta test (taqdimotchi bergan) ----------
+window.QUIZ = {
+  q1: { n: 1, dur: 20,
+    q: "MIT, Yale va Stanfordning jahon iqtisodiyotiga ta’sirida eng muhim umumiy omil qaysi?",
+    a: ["Bilim va innovatsiyani biznes bilan bog‘lash", "Talabalar sonini doimiy ravishda oshirish",
+        "Universitet xarajatlarini keskin kamaytirish", "Faqat davlat mablag‘lariga tayanib ishlash"], c: 0 },
+  q2: { n: 2, dur: 20,
+    q: "MITning iqtisodiy ta’sir modelini qaysi ketma-ketlik eng yaxshi ifodalaydi?",
+    a: ["Ta’lim → Marketing → Savdo → Foyda", "Tadqiqot → Texnologiya → Sanoat → O‘sish",
+        "Kapital → Kredit → Soliq → Eksport", "Talaba → Diplom → Ish → Iste’mol"], c: 1 },
+  q3: { n: 3, dur: 20,
+    q: "Stanfordning iqtisodiy modelida qaysi bog‘liqlik muhim hisoblanadi?",
+    a: ["Universitet → Davlat → Soliq → Eksport", "Universitet → Talaba → Diplom → Ish",
+        "Universitet → Startap → Investitsiya → Bozor", "Universitet → Xarajat → Kredit → Daromad"], c: 2 },
+  q4: { n: 4, dur: 20,
+    q: "MIT bilan bog‘liq 1,9 trillion dollar ko‘rsatkichi nimani anglatadi?",
+    a: ["MITning yillik sof daromadini", "MITning umumiy yillik xarajatini",
+        "MITning universitet fondi qiymatini", "Bitiruvchilar kompaniyalari daromadini"], c: 3 },
+  q5: { n: 5, dur: 20,
+    q: "Stanford bilan bog‘liq 2,7 trillion dollar ko‘rsatkichi nimani ifodalaydi?",
+    a: ["Universitetning umumiy aktivlarini", "Universitetning yillik byudjetini",
+        "Stanfordga bog‘liq kompaniyalar miqyosini", "Universitetning ilmiy tadqiqot xarajatini"], c: 2 },
+  q6: { n: 6, dur: 25,
+    q: "Nega boshqa universitet MIT modelini shunchaki ko‘chirib, ayni natijaga erisha olmaydi?",
+    a: ["Universitetlar faqat ta’lim bilan shug‘ullanadi", "Natija butun institutsional ekotizimga bog‘liq",
+        "Ilmiy tadqiqotlar barcha joyda bir xil bo‘ladi", "Universitetlarda talabalar soni yetarli bo‘lmaydi"], c: 1 },
+  q7: { n: 7, dur: 25,
+    q: "Kuchli olimlar bo‘lsa-yu, texnologiya transferi tizimi bo‘lmasa, asosiy muammo nima?",
+    a: ["Ilmiy bilimni iqtisodiy qiymatga aylantirish qiyinlashadi", "Talabalarning universitetga kirishi avtomatik ravishda kamayadi",
+        "Universitetning barcha akademik dasturlari to‘xtab qoladi", "Davlat tomonidan beriladigan mablag‘lar darhol tugaydi"], c: 0 },
+  q8: { n: 8, dur: 25,
+    q: "O‘zbekistonda zamonaviy laboratoriya qurildi, lekin investor va startap tizimi yo‘q. Nima yuz berishi mumkin?",
+    a: ["Ilmiy natijalar tijoratlashmasdan qolishi mumkin", "Barcha tadqiqotlar avtomatik ravishda foyda keltiradi",
+        "Universitet darhol xalqaro kompaniyaga aylanishi mumkin", "Laboratoriya xarajatlari o‘z-o‘zidan qoplanishi mumkin"], c: 0 },
+  q9: { n: 9, dur: 20,
+    q: "Stanfordga o‘xshash innovatsion ekotizim uchun qaysi kombinatsiya muhim?",
+    a: ["Universitet + imtihon + diplom + ish o‘rni", "Universitet + tadqiqot + startap + investitsiya",
+        "Universitet + soliq + kredit + davlat xarajati", "Universitet + reklama + savdo + iste’molchi"], c: 1 },
+  q10: { n: 10, dur: 25,
+    q: "Institutsional iqtisodiyot nuqtayi nazaridan asosiy xulosa qaysi?",
+    a: ["Kuchli iqtisodiyot uchun faqat katta kapital yetarli", "Universitet muvaffaqiyati faqat talabalar soniga bog‘liq",
+        "Kapitaldan ko‘ra institutlar va bog‘lanishlar ham muhim", "Ilmiy tadqiqotlar iqtisodiy rivojlanishga ta’sir qilmaydi"], c: 2 }
+};
+
+// ---------- Natijalar (haqiqiy tarixiy holatlar) ----------
+// YaIM = aholi jon boshiga nominal YaIM, AQSh dollari, Jahon banki (so‘nggi ma’lumot).
+window.CASES = {
+  KOR_S: { good: true, name: "Janubiy Koreya", years: "1953 → bugun", gdp: "36 227 $",
+    facts: ["1960-yilda aholi jon boshiga YaIM bor-yo‘g‘i ≈158 $ edi — ko‘plab Afrika davlatlaridan kambag‘al",
+            "Yer islohoti va eksportga yo‘naltirilgan sanoat: Samsung, Hyundai, LG jahon brendiga aylandi",
+            "Bugun aholi jon boshiga YaIM 36 227 $ — 200 baravardan ko‘p o‘sish"] },
+  KOR_N: { good: false, name: "Shimoliy Koreya", years: "1953 → bugun", gdp: "≈640 $",
+    facts: ["Barcha yer, zavod va do‘konlar davlat mulkiga o‘tkazildi, iqtisodiyot qat’iy rejaga bo‘ysundi",
+            "1990-yillar o‘rtasida og‘ir ocharchilik yuz berdi",
+            "Bugun aholi jon boshiga YaIM ≈640 $ (BMT bahosi) — janubiy qo‘shnisidan 50 baravardan ko‘p kam"] },
+  ARG: { good: false, name: "Argentina (import o‘rnini bosish yo‘li)", years: "1946 → bugun", gdp: "14 898 $",
+    facts: ["XX asr boshida dunyoning eng boy davlatlari qatorida edi",
+            "Yuqori bojlar va himoyalangan sanoat raqobatbardoshlikni pasaytirdi",
+            "1989-yilda inflyatsiya 3000 foizdan oshdi; bugun YaIM 14 898 $"] },
+  PHL: { good: false, name: "Filippin (Markos davri)", years: "1965 → 1986", gdp: "4 171 $",
+    facts: ["Shakar, kokos va qurilish monopoliyalari prezidentga yaqin oilalarga berildi — «do‘stlar kapitalizmi»",
+            "1984 va 1985-yillarda iqtisodiyot har yili ≈7% qisqardi",
+            "Tashqi qarz ≈26 mlrd $ ga yetdi, 1986-yilda rejim xalq noroziligi bilan quladi"] },
+  GER_W: { good: true, name: "G‘arbiy Germaniya", years: "1948 → bugun", gdp: "60 496 $",
+    facts: ["1948-yil: narxlar erkin qo‘yildi, yangi barqaror marka joriy qilindi",
+            "1950–60-yillar «iqtisodiy mo‘jiza» deb nom oldi; keyin mustaqil markaziy bank tuzildi",
+            "Bugun birlashgan Germaniya: aholi jon boshiga YaIM 60 496 $"] },
+  GER_E: { good: false, name: "Sharqiy Germaniya", years: "1949 → 1990", gdp: "—",
+    facts: ["Narx ham, ishlab chiqarish ham davlat rejasi bilan belgilandi",
+            "Millionlab odam G‘arbga qochdi — 1961-yilda Berlin devori qurildi",
+            "«Trabant» avtomobili uchun navbat 10 yildan oshardi; 1990-yilda davlat tarqab ketdi"] },
+  ZIM: { good: false, name: "Zimbabve", years: "2000 → 2009", gdp: "3 021 $",
+    facts: ["Fermer yerlari tortib olinib, hokimiyatga sodiq odamlarga berildi — qishloq xo‘jaligi qulab tushdi",
+            "Byudjet kamomadi yangi pul bosish bilan qoplandi",
+            "2008-yil noyabr: oylik inflyatsiya ≈79,6 milliard foiz; 2009-yilda milliy valyuta amalda muomaladan chiqdi"] },
+  BWA: { good: true, name: "Botsvana", years: "1966 → bugun", gdp: "7 778 $",
+    facts: ["1966-yilda mustaqillikka erishganda dunyoning eng kambag‘al davlatlaridan biri edi",
+            "Olmos daromadi shaffof boshqarildi, mulk huquqi va qonun hamma uchun teng bo‘ldi",
+            "Bugun aholi jon boshiga YaIM 7 778 $ — qo‘shni Zimbabvedan 2,5 baravar yuqori"] },
+  SGP: { good: true, name: "Singapur", years: "1965 → bugun", gdp: "98 814 $",
+    facts: ["1965-yilda aholi jon boshiga YaIM ≈517 $ edi, tabiiy resurslar yo‘q",
+            "Ochiq savdo, xorijiy investitsiyaga kafolat, korrupsiyaga qat’iy jazo",
+            "Bugun aholi jon boshiga YaIM 98 814 $ — dunyodagi eng yuqorilaridan biri"] },
+  IND_LR: { good: false, name: "Hindiston (litsenziya tizimi, 1950–1990)", years: "1950 → 1991", gdp: "—",
+    facts: ["Zavod ochish yoki ishlab chiqarishni oshirish uchun o‘nlab davlat ruxsatnomalari kerak edi",
+            "Yillik o‘sish ≈3,5% atrofida qoldi — buni «hind o‘sish sur’ati» deb atashgan",
+            "1991-yilda valyuta zaxirasi bir necha haftalik importga yetadigan darajaga tushib, inqiroz boshlandi"] },
+  IND_91: { good: true, name: "Hindiston (1991 islohotlari)", years: "1991 → bugun", gdp: "2 703 $",
+    facts: ["Litsenziya tizimi bekor qilindi, savdo va xorijiy investitsiya uchun eshik ochildi",
+            "Axborot texnologiyalari sanoati jahon bozoriga chiqdi",
+            "Bugun Hindiston dunyoning eng yirik beshta iqtisodiyotidan biri"] },
+  CHN_R: { good: true, name: "Xitoy (1978 islohotlari)", years: "1978 → bugun", gdp: "13 862 $",
+    facts: ["Dehqonlarga ortiqcha hosilni o‘zi sotish huquqi berildi, maxsus iqtisodiy zonalar ochildi",
+            "1978-yilda aholi jon boshiga YaIM ≈156 $ edi, bugun 13 862 $",
+            "Jahon banki ma’lumotiga ko‘ra 800 milliondan ortiq odam o‘ta qashshoqlikdan chiqdi"] },
+  CHN_M: { good: false, name: "Xitoy (Mao davri, «Buyuk sakrash»)", years: "1958 → 1962", gdp: "—",
+    facts: ["Yer va mol-mulk kommunalarga olindi, rejalar majburiy qilib belgilandi",
+            "Hisobotlarda hosil sun’iy oshirib ko‘rsatildi, don majburan yig‘ib olindi",
+            "1959–1961-yillardagi ocharchilikda o‘n millionlab odam halok bo‘ldi"] },
+  USSR: { good: false, name: "SSSR (narxlarni davlat belgilashi)", years: "1930 → 1991", gdp: "—",
+    facts: ["Asosiy mahsulotlar narxi o‘n yillar davomida davlat tomonidan muzlatib qo‘yildi",
+            "Natija: bo‘sh peshtaxtalar, uzun navbatlar va kamyob mollar uchun «qora bozor»",
+            "1991-yilda davlat iqtisodiy inqiroz ichida parchalanib ketdi"] },
+  POL: { good: true, name: "Polsha", years: "1990 → bugun", gdp: "28 420 $",
+    facts: ["1990-yil: tez bozor islohoti, mustaqil sud va markaziy bank, Yevropaga integratsiya",
+            "1990-yilda Ukraina bilan deyarli bir xil darajada edi",
+            "Bugun aholi jon boshiga YaIM 28 420 $ — Ukrainadan ≈5 baravar yuqori"] },
+  UKR: { good: false, name: "Ukraina (1990-yillar yo‘li)", years: "1991 → bugun", gdp: "5 866 $",
+    facts: ["Islohotlar sekin bordi, yirik zavodlar arzon narxda tor guruhlar qo‘liga o‘tdi",
+            "Kuchli oligarxlar siyosat va sudga ta’sir o‘tkaza boshladi",
+            "Bugun aholi jon boshiga YaIM 5 866 $ — boshlang‘ich nuqtasi bir xil bo‘lgan Polshadan ≈5 baravar kam"] },
+  BLR: { good: false, name: "Belarus", years: "1994 → bugun", gdp: "10 279 $",
+    facts: ["Iqtisodiyotning katta qismi davlat qo‘lida qoldi, narxlar nazorat qilindi",
+            "Xususiy biznes va raqobat cheklandi",
+            "Bugun aholi jon boshiga YaIM 10 279 $ — qo‘shni Polshadan ≈3 baravar kam"] },
+  EST: { good: true, name: "Estoniya", years: "1991 → bugun", gdp: "34 418 $",
+    facts: ["1992-yilda o‘z valyutasi, 1994-yilda oddiy va yagona daromad solig‘i joriy qilindi",
+            "Raqamli davlat: deyarli barcha davlat xizmatlari onlayn",
+            "Bugun aholi jon boshiga YaIM 34 418 $ — Belarusdan ≈3 baravar yuqori"] },
+  NOR: { good: true, name: "Norvegiya (neft fondi qoidasi)", years: "1990 → bugun", gdp: "94 594 $",
+    facts: ["Neft daromadi alohida davlat fondiga yig‘iladi, byudjetga faqat kichik qismi sarflanadi",
+            "Fond dunyodagi eng yirik davlat fondlaridan biriga aylandi — trillion dollardan ortiq",
+            "Bugun aholi jon boshiga YaIM 94 594 $"] },
+  VEN: { good: false, name: "Venesuela", years: "1999 → bugun", gdp: "3 495 $",
+    facts: ["Neft pulini davlat taqsimladi: narxlar nazorati, kompaniyalarni milliylashtirish",
+            "2018-yilda inflyatsiya ≈130 000 foizga yetdi",
+            "7 milliondan ortiq kishi mamlakatni tark etdi; bugun YaIM 3 495 $"] },
+  CRI: { good: true, name: "Kosta-Rika", years: "1948 → bugun", gdp: "19 970 $",
+    facts: ["1948-yilda armiya tugatildi, mablag‘ maktab va kasalxonalarga yo‘naltirildi",
+            "Barqaror demokratiya, mustaqil sud va saylovlar",
+            "Bugun aholi jon boshiga YaIM 19 970 $ — qo‘shni Gvatemaladan 3 baravar yuqori"] },
+  GTM: { good: false, name: "Gvatemala", years: "1954 → bugun", gdp: "6 598 $",
+    facts: ["Yer va boylik tor elita qo‘lida qoldi, hokimiyatni harbiylar boshqardi",
+            "1960–1996-yillarda uzoq fuqarolar urushi bo‘ldi",
+            "Bugun aholi jon boshiga YaIM 6 598 $ — Kosta-Rikadan 3 baravar kam"] }
+};
+
+// ---------- O‘yin: 10 ta davlat va har biriga 4 ta variant ----------
+// Variantlarda «yaxshi» yoki «yomon» degan yorliq yo‘q — ataylab hammasi jozibali yozilgan.
+window.COUNTRIES = [
+  { flag: "🇰🇷", name: "Koreya", year: 1953, end: 2025, sit: "Urushdan keyin vayron. Xomashyo yo‘q, aholi qashshoq.",
+    opts: [
+      ["Barcha yer va zavodlar xalq mulki bo‘ladi — boy ham, kambag‘al ham, ishsiz ham bo‘lmaydi", "KOR_N"],
+      ["Eng yirik korxonalar ishonchli oilalarga topshiriladi — ular mamlakatni tez boyitadi", "PHL"],
+      ["Yer dehqonlarga bo‘lib beriladi, korxonalar jahon bozorida raqobatlashadi", "KOR_S"],
+      ["Chet el mollariga yuqori boj — faqat o‘zimiznikini ishlab chiqaramiz", "ARG"] ] },
+  { flag: "🇩🇪", name: "Germaniya", year: 1948, end: 2025, sit: "Urushdan keyin pul qadrsiz, do‘konlar bo‘m-bo‘sh.",
+    opts: [
+      ["Non va go‘sht narxi qonun bilan muzlatiladi — hamma uchun arzon bo‘ladi", "USSR"],
+      ["Narxlar erkin qo‘yiladi, yangi barqaror pul va mustaqil markaziy bank", "GER_W"],
+      ["Narx ham, ishlab chiqarish ham davlat rejasi bilan — adolatli taqsimot", "GER_E"],
+      ["Kamomadni yangi pul bosib qoplaymiz — maoshlar darhol oshadi", "ZIM"] ] },
+  { flag: "🇧🇼", name: "Botsvana", year: 1967, end: 2025, sit: "Kambag‘al yosh davlat. Yerdan katta olmos koni topildi.",
+    opts: [
+      ["Olmos pulini davlat xalqqa taqsimlaydi: arzon benzin, bepul tovarlar", "VEN"],
+      ["Konlar va yerlar begonalardan olinib, sodiq vatanparvarlarga beriladi", "ZIM"],
+      ["Konlar davlat monopoliyasi bo‘ladi, raqobatchilar taqiqlanadi", "USSR"],
+      ["Olmos daromadi shaffof fondga, qonun va mulk huquqi hamma uchun teng", "BWA"] ] },
+  { flag: "🇸🇬", name: "Singapur", year: 1965, end: 2025, sit: "Kichik orol: na yer, na ichimlik suvi, na xomashyo.",
+    opts: [
+      ["Har bir zavod va do‘kon uchun davlat ruxsatnomasi — tartib bo‘lsin", "IND_LR"],
+      ["Importni cheklab, hamma narsani o‘zimiz ishlab chiqaramiz", "ARG"],
+      ["Ochiq port, xorijiy investorlarga kafolat, korrupsiyaga qattiq jazo", "SGP"],
+      ["Byudjet kamomadini pul bosib yopamiz — qarz olmaymiz", "ZIM"] ] },
+  { flag: "🇨🇳", name: "Xitoy", year: 1978, end: 2025, sit: "Bir milliard aholi, ko‘pchiligi qishloqda va qashshoq.",
+    opts: [
+      ["Kommunalar saqlanadi, reja yanada qat’iylashtiriladi — intizom hamma narsani hal qiladi", "CHN_M"],
+      ["Dehqon ortiqcha hosilni o‘zi sotadi, maxsus zonalarda xorijiy biznesga ruxsat", "CHN_R"],
+      ["Barcha narxlar davlat tomonidan qat’iy belgilanadi — chayqovchilikka yo‘l yo‘q", "USSR"],
+      ["Litsenziyalar faqat sinalgan, ishonchli oilalarga beriladi", "PHL"] ] },
+  { flag: "🇵🇱", name: "Polsha", year: 1990, end: 2025, sit: "Sotsializm tugadi. Inflyatsiya yuqori, zavodlar eskirgan.",
+    opts: [
+      ["Ishsizlik bo‘lmasligi uchun pul bosib maosh to‘laymiz", "ZIM"],
+      ["Yirik korxonalar davlatda qoladi, narxlar nazoratda — barqarorlik", "BLR"],
+      ["Sekin islohot: zavodlar tajribali rahbarlarga arzon xususiylashtiriladi", "UKR"],
+      ["Tez bozor islohoti, mustaqil sud va markaziy bank, Yevropaga integratsiya", "POL"] ] },
+  { flag: "🇪🇪", name: "Estoniya", year: 1991, end: 2025, sit: "Mustaqillik endi qo‘lga kirdi. Xazina bo‘m-bo‘sh.",
+    opts: [
+      ["O‘z valyutasi, oddiy va yagona soliq, raqamli davlat", "EST"],
+      ["Davlat iqtisodiyotni boshqaradi, narxlar nazoratda — tartib va barqarorlik", "BLR"],
+      ["Zavodlar tanish, tajribali rahbarlarga arzon sotiladi", "UKR"],
+      ["Importni cheklab, o‘z sanoatimizni himoya qilamiz", "ARG"] ] },
+  { flag: "🇻🇪", name: "Venesuela", year: 1999, end: 2025, sit: "Dunyodagi eng katta neft zaxirasi. Ko‘p odam kambag‘al.",
+    opts: [
+      ["Neft pulini xalqqa taqsimlaymiz: narxlar nazorati, kompaniyalarni milliylashtirish", "VEN"],
+      ["Neft litsenziyalari faqat ishonchli hamkorlarga", "PHL"],
+      ["Neft pulini alohida fondga yig‘ib, faqat kichik qismini sarflash qoidasi", "NOR"],
+      ["Kamomadni pul bosib qoplaymiz — ijtimoiy dasturlar to‘xtamasin", "ZIM"] ] },
+  { flag: "🇨🇷", name: "Kosta-Rika", year: 1948, end: 2025, sit: "Fuqarolar urushidan endi chiqdi. Kichik qishloq xo‘jaligi davlati.",
+    opts: [
+      ["Yer va boylik eng kuchli oilalarda qoladi, tartibni armiya saqlaydi", "GTM"],
+      ["Chet el mollariga yuqori boj — o‘z ishlab chiqaruvchimizni himoya qilamiz", "ARG"],
+      ["Armiya tugatilib, mablag‘ maktab va kasalxonalarga; sud mustaqil", "CRI"],
+      ["Narxlarni davlat belgilaydi — hamma uchun arzon", "VEN"] ] },
+  { flag: "🇮🇳", name: "Hindiston", year: 1991, end: 2025, sit: "Valyuta zaxirasi tugab bormoqda. Iqtisodiyot o‘smayapti.",
+    opts: [
+      ["Litsenziya tizimi saqlanadi — davlat nazorati kuchli bo‘lsin", "IND_LR"],
+      ["Barcha yirik sanoat davlatlashtiriladi va narxlar belgilanadi", "USSR"],
+      ["Kamomadni pul bosib yopamiz — tez va qulay", "ZIM"],
+      ["Litsenziya tizimi bekor qilinadi, bozor va savdo ochiladi", "IND_91"] ] }
+];
+
+// Guruhlar
+window.GROUPS = [
+  { name: "Qizil", color: "#ff4d6d", emoji: "🔴" },
+  { name: "Ko‘k", color: "#3d8bff", emoji: "🔵" },
+  { name: "Yashil", color: "#22d39a", emoji: "🟢" }
+];
+
+</script>
+</head>
+<body>
+<div id="bgwrap"><canvas id="net"></canvas></div>
+<canvas id="confetti"></canvas>
+
+<!-- Musiqa fayllari (ixtiyoriy): musiqa/ papkasiga qo'ying -->
+<audio id="bgm" src="musiqa/fon.mp3" loop preload="auto"></audio>
+<audio id="introMusic" src="musiqa/intro.mp3" preload="auto"></audio>
+<audio id="finalMusic" src="musiqa/final.mp3" preload="auto"></audio>
+
+<div id="app"></div>
+<script>
+/* =====================================================================
+   MIT, Yale va Stanford — jonli interaktiv dars
+   Host (proyektor):  index.html?host=1
+   O'quvchi (telefon): index.html?room=XXXX   (QR orqali)
+   ===================================================================== */
+(function () {
+"use strict";
+
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const P = new URLSearchParams(location.search);
+const IS_HOST = P.get("host") === "1";
+const LOCAL = P.get("local") === "1" || typeof firebase === "undefined" || !window.FIREBASE_CONFIG;
+const HEADER = "TIIAME · INSTITUTSIONAL IQTISODIYOT";
+const PRESENTER = "Mirfayz Mirsaidov";
+const LETTERS = ["A", "B", "C", "D"], SHAPES = ["▲", "◆", "●", "■"];
+const GAME_BONUS = 1500;
+
+/* ------------------------------------------------------------------
+   1. Ma'lumotlar bazasi (Firebase yoki sinov uchun lokal)
+   ------------------------------------------------------------------ */
+let fdb = null, offset = 0;
+if (!LOCAL) {
+  firebase.initializeApp(window.FIREBASE_CONFIG);
+  fdb = firebase.database();
+  fdb.ref(".info/serverTimeOffset").on("value", s => { offset = s.val() || 0; });
+}
+const now = () => Date.now() + offset;
+const TS = () => (LOCAL ? Date.now() : firebase.database.ServerValue.TIMESTAMP);
+
+const LK = "fakedb_v1"; let ltree = {}; const llis = [];
+function lload() { try { ltree = JSON.parse(localStorage.getItem(LK)) || {}; } catch (e) { ltree = {}; } }
+function lget(path) { let o = ltree; for (const k of path.split("/").filter(Boolean)) { if (o == null || typeof o !== "object") return null; o = o[k]; } return o === undefined ? null : o; }
+function lsetRaw(path, val) {
+  const ks = path.split("/").filter(Boolean); let o = ltree;
+  for (let i = 0; i < ks.length - 1; i++) { if (typeof o[ks[i]] !== "object" || o[ks[i]] === null) o[ks[i]] = {}; o = o[ks[i]]; }
+  if (val === null || val === undefined) delete o[ks[ks.length - 1]]; else o[ks[ks.length - 1]] = JSON.parse(JSON.stringify(val));
+}
+function lnotify() { for (const l of llis.slice()) { const j = JSON.stringify(lget(l.path)); if (j !== l.last) { l.last = j; l.cb(JSON.parse(j)); } } }
+function lsave() { localStorage.setItem(LK, JSON.stringify(ltree)); lnotify(); }
+window.addEventListener("storage", e => { if (e.key === LK) { lload(); lnotify(); } });
+
+const DB = {
+  set(path, val) { if (LOCAL) { lload(); lsetRaw(path, val); lsave(); return Promise.resolve(); } return fdb.ref(path).set(val); },
+  update(path, obj) { if (LOCAL) { lload(); for (const k in obj) lsetRaw(path + "/" + k, obj[k]); lsave(); return Promise.resolve(); } return fdb.ref(path).update(obj); },
+  get(path) { if (LOCAL) { lload(); return Promise.resolve(JSON.parse(JSON.stringify(lget(path)))); } return fdb.ref(path).once("value").then(s => s.val()); },
+  on(path, cb) {
+    if (LOCAL) { lload(); const l = { path, cb, last: undefined }; llis.push(l); setTimeout(() => { l.last = JSON.stringify(lget(path)); cb(JSON.parse(l.last)); }); return () => { const i = llis.indexOf(l); if (i >= 0) llis.splice(i, 1); }; }
+    const r = fdb.ref(path); const h = r.on("value", s => cb(s.val())); return () => r.off("value", h);
+  }
+};
+
+/* ------------------------------------------------------------------
+   2. Ovozlar (hammasi dastur ichida sintez qilinadi)
+   ------------------------------------------------------------------ */
+let AC = null, MG = null, muted = false;
+function ac() { if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)(); if (AC.state === "suspended") AC.resume(); return AC; }
+function master() { const c = ac(); if (!MG) { MG = c.createGain(); MG.gain.value = muted ? 0 : 0.9; MG.connect(c.destination); } return MG; }
+function env(g, t, a, peak, d) { g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + a); g.gain.exponentialRampToValueAtTime(0.0001, t + a + d); }
+function osc(type, f, t, dur, peak, f2) {
+  const c = ac(); const o = c.createOscillator(), g = c.createGain(); o.type = type; o.frequency.setValueAtTime(f, t);
+  if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + dur); env(g, t, 0.01, peak, dur); o.connect(g).connect(master()); o.start(t); o.stop(t + dur + 0.05);
+}
+let NB = null;
+function noise(t, dur, peak, ftype, f1, f2) {
+  const c = ac(); if (!NB) { NB = c.createBuffer(1, c.sampleRate * 3, c.sampleRate); const d = NB.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; }
+  const s = c.createBufferSource(); s.buffer = NB; const f = c.createBiquadFilter(); f.type = ftype || "lowpass"; f.frequency.setValueAtTime(f1 || 1000, t);
+  if (f2) f.frequency.exponentialRampToValueAtTime(f2, t + dur); const g = c.createGain(); env(g, t, 0.02, peak, dur);
+  s.connect(f).connect(g).connect(master()); s.start(t, Math.random()); s.stop(t + dur + 0.05);
+}
+const SFX = {
+  beat() { const t = ac().currentTime; osc("sine", 64, t, 0.16, 1, 40); noise(t, 0.08, 0.25, "lowpass", 180); osc("sine", 58, t + 0.2, 0.22, 0.75, 36); },
+  tick() { const t = ac().currentTime; osc("square", 1900, t, 0.025, 0.06); },
+  beep(hi) { const t = ac().currentTime; osc("sine", hi ? 1320 : 880, t, 0.14, 0.28); },
+  whoosh() { const t = ac().currentTime; noise(t, 1.1, 0.45, "bandpass", 300, 4500); },
+  warp() { const t = ac().currentTime; osc("sawtooth", 70, t, 3, 0.08, 1400); noise(t, 3, 0.22, "bandpass", 200, 6000); osc("sine", 140, t, 3, 0.18, 2200); },
+  ok() { const t = ac().currentTime; osc("triangle", 660, t, 0.15, 0.35); osc("triangle", 990, t + 0.12, 0.35, 0.35); },
+  no() { const t = ac().currentTime; osc("sawtooth", 170, t, 0.4, 0.18, 100); },
+  drum(sec) { const t = ac().currentTime; const n = Math.floor(sec * 20); for (let i = 0; i < n; i++) noise(t + i / 20, 0.05, 0.08 + 0.45 * i / n, "highpass", 900); },
+  fanfare() { const t = ac().currentTime; [523, 659, 784, 1047].forEach((f, i) => { osc("triangle", f, t + i * 0.13, 0.45, 0.3); osc("sawtooth", f / 2, t + i * 0.13, 0.35, 0.05); }); [523, 659, 784, 1047].forEach(f => osc("triangle", f, t + 0.62, 1.6, 0.18)); },
+  pop() { const t = ac().currentTime; osc("sine", 520, t, 0.08, 0.18, 950); },
+  riser(sec) { const t = ac().currentTime; osc("sawtooth", 110, t, sec, 0.06, 900); noise(t, sec, 0.14, "bandpass", 400, 5000); },
+  hit() { const t = ac().currentTime; osc("sine", 55, t, 1.8, 1, 26); noise(t, 1.3, 0.45, "lowpass", 2500, 70); osc("sawtooth", 110, t, 1.3, 0.05, 55); },
+  type() { const t = ac().currentTime; osc("square", 2400 + Math.random() * 600, t, 0.015, 0.03); }
+};
+function sfx(n, a) { if (muted) return; try { SFX[n](a); } catch (e) { } }
+
+// Ixtiyoriy musiqa fayllari (musiqa/fon.mp3, musiqa/intro.mp3, musiqa/final.mp3)
+function music(id, on, vol) {
+  const el = document.getElementById(id); if (!el) return;
+  try { if (on) { el.volume = muted ? 0 : (vol == null ? 0.5 : vol); el.currentTime = 0; const p = el.play(); if (p) p.catch(() => { }); } else { el.pause(); } } catch (e) { }
+}
+function setMuted(m) { muted = m; if (MG) MG.gain.value = m ? 0 : 0.9; ["bgm", "introMusic", "finalMusic"].forEach(id => { const el = document.getElementById(id); if (el) el.muted = m; }); }
+
+/* ------------------------------------------------------------------
+   3. Fon: harakatlanuvchi «Institutlar tarmog'i»
+   ------------------------------------------------------------------ */
+function startNet(light) {
+  const cv = $("#net"), cx = cv.getContext("2d"); let W, H, dpr;
+  const labels = ["Universitet", "Laboratoriya", "Patent", "Startap", "Investor", "Bozor", "Sud", "Davlat", "Bank", "Kompaniya", "Ish o‘rni", "Bilim", "Mulk huquqi", "Shartnoma", "Talaba", "Olim", "Litsenziya", "Ishonch"];
+  const N = light ? 26 : 46; const nodes = []; const pulses = [];
+  function rs() { dpr = Math.min(2, devicePixelRatio || 1); W = cv.width = innerWidth * dpr; H = cv.height = innerHeight * dpr; }
+  rs(); addEventListener("resize", rs);
+  for (let i = 0; i < N; i++) nodes.push({ x: Math.random() * W, y: Math.random() * H, vx: (Math.random() - .5) * .25 * dpr, vy: (Math.random() - .5) * .25 * dpr, l: i < labels.length && !light ? labels[i] : (light && i < 8 ? labels[i] : null), r: (i < labels.length ? 3 : 1.6) * dpr, ph: Math.random() * 6 });
+  function frame(t) {
+    cx.clearRect(0, 0, W, H); const D = 260 * dpr;
+    for (const n of nodes) { n.x += n.vx; n.y += n.vy; if (n.x < -50 || n.x > W + 50) n.vx *= -1; if (n.y < -50 || n.y > H + 50) n.vy *= -1; }
+    for (let i = 0; i < N; i++) for (let j = i + 1; j < N; j++) {
+      const a = nodes[i], b = nodes[j], dx = a.x - b.x, dy = a.y - b.y, d = Math.hypot(dx, dy);
+      if (d < D) { const al = (1 - d / D) * .22; cx.strokeStyle = `rgba(120,200,255,${al})`; cx.lineWidth = dpr; cx.beginPath(); cx.moveTo(a.x, a.y); cx.lineTo(b.x, b.y); cx.stroke();
+        if (Math.random() < 0.0009) pulses.push({ a, b, p: 0, c: Math.random() < .5 ? "247,201,72" : "62,230,196" }); }
+    }
+    for (let k = pulses.length - 1; k >= 0; k--) { const q = pulses[k]; q.p += 0.008; if (q.p >= 1) { pulses.splice(k, 1); continue; }
+      const x = q.a.x + (q.b.x - q.a.x) * q.p, y = q.a.y + (q.b.y - q.a.y) * q.p; const g = cx.createRadialGradient(x, y, 0, x, y, 9 * dpr);
+      g.addColorStop(0, `rgba(${q.c},.9)`); g.addColorStop(1, `rgba(${q.c},0)`); cx.fillStyle = g; cx.beginPath(); cx.arc(x, y, 9 * dpr, 0, 7); cx.fill(); }
+    cx.font = `${12 * dpr}px "JetBrains Mono",monospace`; cx.textAlign = "center";
+    for (const n of nodes) { const tw = .5 + .5 * Math.sin(t / 900 + n.ph);
+      cx.fillStyle = n.l ? `rgba(247,201,72,${.35 + .35 * tw})` : "rgba(150,190,255,.35)"; cx.beginPath(); cx.arc(n.x, n.y, n.r, 0, 7); cx.fill();
+      if (n.l) { cx.fillStyle = `rgba(200,215,255,${.16 + .14 * tw})`; cx.fillText(n.l, n.x, n.y - 10 * dpr); } }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+
+/* ------------------------------------------------------------------
+   4. Konfetti
+   ------------------------------------------------------------------ */
+let confParts = [], confRun = false;
+function confetti(n) {
+  const cv = $("#confetti"), cx = cv.getContext("2d"); cv.width = innerWidth; cv.height = innerHeight;
+  const cols = ["#f7c948", "#3ee6c4", "#ff4d6d", "#3d8bff", "#ffffff", "#22d39a"];
+  for (let i = 0; i < (n || 220); i++) confParts.push({ x: Math.random() * cv.width, y: -20 - Math.random() * cv.height * .6, vx: (Math.random() - .5) * 3, vy: 2 + Math.random() * 4, r: Math.random() * 6, w: 6 + Math.random() * 6, h: 3 + Math.random() * 5, c: cols[i % cols.length], s: (Math.random() - .5) * .3 });
+  if (confRun) return; confRun = true;
+  (function f() { cx.clearRect(0, 0, cv.width, cv.height);
+    confParts = confParts.filter(p => p.y < cv.height + 30);
+    for (const p of confParts) { p.x += p.vx; p.y += p.vy; p.r += p.s; cx.save(); cx.translate(p.x, p.y); cx.rotate(p.r); cx.fillStyle = p.c; cx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h); cx.restore(); }
+    if (confParts.length) requestAnimationFrame(f); else { confRun = false; cx.clearRect(0, 0, cv.width, cv.height); } })();
+}
+
+/* ------------------------------------------------------------------
+   5. QR kod
+   ------------------------------------------------------------------ */
+function qrSvg(text) {
+  if (typeof qrcode === "undefined") return `<div style="color:#000;font:12px monospace;padding:8px">${esc(text)}</div>`;
+  const q = qrcode(0, "M"); q.addData(text); q.make(); const n = q.getModuleCount(); let p = "";
+  for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (q.isDark(r, c)) p += `M${c},${r}h1v1h-1z`;
+  return `<svg viewBox="0 0 ${n} ${n}" shape-rendering="crispEdges" xmlns="http://www.w3.org/2000/svg"><path d="${p}" fill="#000"/></svg>`;
+}
+
+/* ------------------------------------------------------------------
+   6. Slaydlar
+   ------------------------------------------------------------------ */
+const K = (t, d = 0) => `<div class="kick a" style="--d:${d}">${t}</div>`;
+const T = (t, d = 1) => `<h1 class="t a" style="--d:${d}">${t}</h1>`;
+const SUB = (t, d = 2) => `<div class="sub a" style="--d:${d}">${t}</div>`;
+const SRC = t => `<div class="src">MANBA: ${t}</div>`;
+const TAKE = (t, d = 6) => `<div class="take a" style="--d:${d}">${t}</div>`;
+const card = (o, d) => `<div class="card ${o.cls || "top"} a" style="--d:${d}">${o.ic ? `<div class="ic">${o.ic}</div>` : ""}${o.tag ? `<div class="tag">${o.tag}</div>` : ""}<h3>${o.h}</h3>${o.num ? `<div class="num">${o.num}</div>` : ""}<p>${o.p}</p></div>`;
+const cards = (arr, cols, d0 = 3) => `<div class="cards" style="grid-template-columns:repeat(${cols},1fr)">${arr.map((o, i) => card(o, d0 + i)).join("")}</div>`;
+const timeline = (items) => `<div class="tl" style="grid-template-columns:repeat(${items.length},1fr)">${items.map((it, i) => `<div class="it a" style="--d:${3 + i * 2}"><div class="y">${it[0]}</div><div class="dot"></div><div class="tt">${it[1]}</div><div class="ts">${it[2]}</div></div>`).join("")}</div>`;
+const flow = (items, d0 = 3) => `<div class="flow">${items.map((it, i) => `${i ? `<div class="ar a" style="--d:${d0 + i * 2 - 1}">→</div>` : ""}<div class="st a" style="--d:${d0 + i * 2}"><div class="ic">${it[0]}</div><h3>${it[1]}</h3><p>${it[2]}</p></div>`).join("")}</div>`;
+const stats = (items) => `<div class="stats">${items.map((it, i) => `<div class="stat a" style="--d:${3 + i}"><div class="v" data-count="${it[0]}" data-pre="${it[2] || ""}" data-suf="${it[3] || ""}">${it[2] || ""}0${it[3] || ""}</div><div class="l">${it[1]}</div></div>`).join("")}</div>`;
+const chips = (label, arr, d = 10) => `<div class="kick a" style="--d:${d};margin-top:3.4vh">${label}</div><div class="chips">${arr.map((c, i) => `<span class="chip a" style="--d:${d + 1 + i * .5}">${c}</span>`).join("")}</div>`;
+
+const S = [
+  /* 1 */ { type: "content", render: () => `
+    <div style="display:flex;flex-direction:column;justify-content:center;height:100%">
+      ${K("MAVZU · UNIVERSITETLAR VA DUNYO IQTISODIYOTI")}
+      ${T(`<em>MIT</em>, <i>Yale</i> va <em>Stanford</em>`)}
+      <h1 class="t a" style="--d:2;font-size:4.4vh;margin-top:1vh">dunyo iqtisodiyotini qanday o‘zgartirdi?</h1>
+      ${SUB("Universitetlar va ularning dunyo iqtisodiyotiga ta’siri", 3)}
+      <div class="a" style="--d:4;margin:3.4vh 0 0;width:7vw;height:3px;background:var(--gold)"></div>
+      <div class="sub a" style="--d:5;color:#fff">Taqdimotchi: <b>${PRESENTER}</b></div>
+      <div class="card gold a" style="--d:7;margin-top:3vh;max-width:44vw;display:flex;gap:1.2vw;align-items:center">
+        <div style="font-size:5vh">📱</div><div><div class="tag">BUGUNGI JONLI O‘YIN</div><h3 style="margin:0">Institutlar laboratoriyasi — telefonlaringizni tayyorlang!</h3><p style="font-size:1.8vh;color:var(--mut)">Pastdagi QR kodni skanerlang</p></div></div>
+    </div>` },
+  /* 2 */ { type: "content", render: () => `<div class="center">
+      ${K("SAVOL")}
+      <div class="big a" style="--d:1">Universitet faqat <span class="grad">diplom</span> beradimi?</div>
+      <div class="sub a" style="--d:4;color:var(--gold);font-size:3vh;margin-top:3vh">🙋 Sizningcha?</div></div>` },
+  /* 3 */ { type: "content", render: () => `
+      ${K("ASOS · INSTITUT NIMA?")}
+      ${T("Institutlar — jamiyatdagi <em>o‘yin qoidalari</em>")}
+      ${SUB("Duglass Nort, iqtisodiyot bo‘yicha Nobel mukofoti sovrindori (1993)")}
+      ${cards([
+        { ic: "⚖️", h: "Rasmiy institutlar", p: "Konstitutsiya, qonunlar, mulk huquqi, shartnomalar, mustaqil sud" },
+        { ic: "🤝", h: "Norasmiy institutlar", p: "An’analar, ishonch, odatlar, ish madaniyati", cls: "gold" }], 2)}
+      ${TAKE("Universitet ham institut: u <span>bilim, pul va odamlarni</span> bir-biriga bog‘laydigan qoidalar tizimi.")}` },
+  /* 4 */ { type: "content", render: () => `
+      ${K("UCHTA UNIVERSITET")}
+      ${T("Uch xil yo‘l — <em>bitta natija</em>: dunyo miqyosidagi ta’sir")}
+      ${cards([
+        { ic: "🔬", tag: "1861 · Kembrij, Massachusets", h: "MIT", p: "Massachusets texnologiya instituti. Shiori: «Aql va qo‘l» — nazariya va amaliyot birga.", num: "27,4 mlrd $" },
+        { ic: "🏛️", tag: "1701 · Nyu-Xeyven, Konnektikut", h: "Yale", p: "AQShdagi eng qadimgi universitetlardan biri. Huquq, siyosat va moliya maktabi.", num: "44,1 mlrd $", cls: "gold" },
+        { ic: "🌲", tag: "1885 · Kaliforniya", h: "Stanford", p: "Kremniy vodiysining yuragi. Muhandislik va tadbirkorlik maktabi.", num: "40,8 mlrd $" }], 3)}
+      <div class="sub a" style="--d:7;font-size:1.9vh">Raqamlar — universitetlarning jamg‘arma fondi (2025 moliya yili)</div>
+      ${SRC("MIT, Yale va Stanford rasmiy moliyaviy hisobotlari, 2025")}` },
+  /* 5 */ { type: "content", render: () => `
+      ${K("TARIX · MIT")}
+      ${T("Laboratoriyadan <em>sanoatga</em>")}
+      ${timeline([
+        ["1861", "Nizom olindi", "Uilyam Barton Rojers fan va amaliyotni birlashtirgan institut ochadi"],
+        ["1940", "Radiatsiya laboratoriyasi", "Ikkinchi jahon urushida radar texnologiyasi shu yerda takomillashtirildi"],
+        ["1946", "Birinchi venchur fondlardan biri", "ARD fondi MIT rahbariyati ishtirokida tuziladi — olimlar g‘oyasiga pul tikiladi"],
+        ["1957", "DEC kompaniyasi", "ARD 70 ming dollar tikdi — bu sarmoya keyinchalik yuzlab million dollarga aylandi"],
+        ["2015", "Bitiruvchilar", "30 mingdan ortiq faol kompaniya hisoblab chiqildi"]])}
+      ${SRC("MIT tarixi; Roberts va boshq., MIT Sloan, 2015")}` },
+  /* 6 */ { type: "content", render: () => `
+      ${K("MODEL · MIT")}
+      ${T("Bilim qanday qilib <em>boylikka</em> aylanadi?")}
+      ${flow([["🔬", "Tadqiqot", "Laboratoriyada yangi bilim"], ["⚙️", "Texnologiya", "Patent va prototip"], ["🏭", "Sanoat", "Kompaniya va ish o‘rinlari"], ["📈", "O‘sish", "Soliq, eksport, farovonlik"]])}
+      ${chips("MIT bitiruvchilari yoki olimlari asos solgan kompaniyalar", ["Intel", "Qualcomm", "Bose", "Dropbox", "Boston Dynamics"])}` },
+  /* 7 */ { type: "quiz", qid: "q2" },
+  /* 8 */ { type: "content", render: () => `
+      ${K("RAQAMLARDA · MIT")}
+      ${T("Agar MIT bitiruvchilari <em>davlat</em> bo‘lganida...")}
+      ${stats([[30200, "faol kompaniya"], [4.6, "million ish o‘rni", "", " mln"], [1.9, "yillik daromad", "", " trln $"]])}
+      ${TAKE("Bu — dunyoning <span>10-yirik iqtisodiyotiga</span> teng (2014 holatiga).", 7)}
+      ${SRC("Roberts, Merrey, Kim — «MITda tadbirkorlik va innovatsiya», MIT Sloan, 2015")}` },
+  /* 9 */ { type: "quiz", qid: "q4" },
+  /* 10 */ { type: "content", render: () => `
+      ${K("TARIX · STANFORD")}
+      ${T("Fojiadan <em>Kremniy vodiysigacha</em>")}
+      ${timeline([
+        ["1884", "Fojia", "Leland Stenfordning 15 yoshli o‘g‘li tif kasalligidan vafot etadi"],
+        ["1891", "Universitet ochildi", "Ota-ona farzandi xotirasiga boshqa yoshlar uchun universitet quradi"],
+        ["1939", "HP garaji", "Ikki bitiruvchi — Hyulett va Pakkard — 538 dollar bilan kompaniya ochadi"],
+        ["1951", "Sanoat parki", "Universitet yerida texnologiya kompaniyalari uchun park ochiladi"],
+        ["1998", "Google", "Ikki aspirant — Larri Peyj va Sergey Brin — qidiruv tizimini kompaniyaga aylantiradi"]])}
+      ${SRC("Stanford universiteti tarixi")}` },
+  /* 11 */ { type: "content", render: () => `
+      ${K("KREMNIY VODIYSI")}
+      ${T("Frederik Terman — <em>Kremniy vodiysining otasi</em>")}
+      ${SUB("U talabalarini Sharqqa ketib qolmasdan, universitet yonida o‘z kompaniyasini ochishga undagan")}
+      ${cards([
+        { ic: "🧲", h: "Universitet + biznes", p: "Professorlar kompaniyalarga maslahatchi, kompaniyalar esa universitetga hamkor" },
+        { ic: "🌉", h: "Yaqinlik", p: "Laboratoriya, investor va kompaniya bir-biridan bir necha kilometr narida", cls: "gold" }], 2)}
+      ${chips("Stanford bitiruvchilari va olimlari asos solgan kompaniyalar", ["HP", "Cisco", "Google", "Nvidia", "Netflix", "Instagram"], 6)}` },
+  /* 12 */ { type: "content", render: () => `
+      ${K("RAQAMLARDA · STANFORD")}
+      ${T("Stanford ildizli kompaniyalar <em>bitta davlat</em> bo‘lsa...")}
+      ${stats([[39900, "faol kompaniya"], [5.4, "million ish o‘rni", "", " mln"], [2.7, "yillik daromad", "", " trln $"]])}
+      ${TAKE("Bu ham — dunyoning <span>10-yirik iqtisodiyoti</span> darajasi (2011 holatiga).", 7)}
+      ${SRC("Isli va Miller — «Stanfordning innovatsiya va tadbirkorlik orqali iqtisodiy ta’siri», 2012")}` },
+  /* 13 */ { type: "quiz", qid: "q5" },
+  /* 14 */ { type: "content", render: () => `
+      ${K("MISOL · TEXNOLOGIYA TRANSFERI")}
+      ${T("Stanford Google’dan qanday <em>foyda</em> ko‘rdi?")}
+      ${flow([["🧪", "Algoritm", "Aspirantlar universitetda qidiruv algoritmini yaratadi"], ["📜", "Patent", "Patent Stanfordga tegishli bo‘ladi"], ["🤝", "Litsenziya", "Universitet uni Google’ga beradi, evaziga aksiya oladi"], ["💰", "336 mln $", "2005-yilda Stanford bu aksiyalarni sotadi"]])}
+      ${TAKE("Universitet <span>qoidasi</span> tufayli bitta ixtiro olimga ham, universitetga ham, jamiyatga ham foyda keltirdi.", 11)}
+      ${SRC("Stanford texnologiya litsenziyalash idorasi")}` },
+  /* 15 */ { type: "quiz", qid: "q3" },
+  /* 16 */ { type: "content", render: () => `
+      ${K("YALE · PUL QANDAY ISHLAYDI")}
+      ${T("«Yale modeli»: <em>jamg‘arma</em> ham innovatsiyaga ishlaydi")}
+      ${cards([
+        { ic: "👤", h: "Devid Svensen", p: "1985–2021-yillarda Yale jamg‘armasini boshqargan" },
+        { ic: "🧩", h: "Yangi yondashuv", p: "Faqat aksiya va obligatsiya emas: xususiy kapital, venchur fondlar, ko‘chmas mulk", cls: "gold" },
+        { ic: "🌍", h: "Ergashuvchilar", p: "Dunyodagi ko‘plab universitet va fondlar bu modelni o‘zlashtirdi" }], 3)}
+      ${TAKE("Yale kabi jamg‘armalar <span>venchur fondlarga</span> pul tikadi, ular esa startaplarni moliyalaydi — ekotizim shu tarzda bog‘lanadi.", 7)}
+      ${SRC("Yale investitsiya idorasi; Yale jamg‘armasi 2025 yilda — 44,1 mlrd $")}` },
+  /* 17 */ { type: "content", render: () => `
+      ${K("YALE · QOIDALARNI YOZADIGANLAR")}
+      ${T("Yale — <em>institutlarni</em> yaratadiganlar maktabi")}
+      ${cards([
+        { ic: "🏛️", h: "5 ta AQSh prezidenti", p: "Taft, Ford, Bush (ota), Klinton va Bush (o‘g‘il) Yale’da o‘qigan" },
+        { ic: "⚖️", h: "Yale huquq maktabi", p: "AQShning eng nufuzli huquq maktablaridan biri: sudyalar va qonunchilar maktabi", cls: "gold" },
+        { ic: "🏅", h: "Iqtisodiyot bo‘yicha Nobel", p: "Jeyms Tobin (1981), Robert Shiller (2013), Uilyam Nordxaus (2018)" }], 3)}
+      ${TAKE("MIT va Stanford <span>texnologiya</span> yaratsa, Yale ko‘pincha <span>qoida va siyosat</span> yaratadiganlarni tayyorlaydi.", 7)}` },
+  /* 18 */ { type: "quiz", qid: "q1" },
+  /* 19 */ { type: "content", render: () => `
+      ${K("QOIDA O‘ZGARDI · 1980")}
+      ${T("Bitta qonun — <em>minglab startaplar</em>")}
+      ${cards([
+        { ic: "🔒", h: "Avval", p: "Davlat pulidan qilingan ixtiro patenti davlatga qolardi. Davlat qo‘lidagi ≈28 ming patentning 5 foizdan kamrog‘i litsenziyalangan.", cls: "red" },
+        { ic: "🔓", h: "Bayh–Dole qonunidan keyin", p: "Patent universitetga qoladi → universitetlar texnologiya transferi idoralarini ochdi → ixtirolar kompaniyalarga o‘ta boshladi." }], 2)}
+      ${TAKE("Pul o‘zgarmadi — <span>qoida</span> o‘zgardi. Bu institutsional iqtisodiyotning eng yorqin misollaridan biri.")}
+      ${SRC("AQSh Bayh–Dole qonuni (1980); AQSh Hisob palatasi")}` },
+  /* 20 */ { type: "content", render: () => `
+      ${K("EKOTIZIM")}
+      ${T("Muvaffaqiyat — bitta universitet emas, <em>butun tizim</em>")}
+      ${flow([["🎓", "Universitet", "Iste’dod va bilim"], ["🔬", "Tadqiqot", "Yangi g‘oya"], ["🚀", "Startap", "G‘oya — mahsulotga"], ["💸", "Investitsiya", "Venchur kapital"], ["🛒", "Bozor", "Mijoz va daromad"]])}
+      <div class="kick a" style="--d:13;margin-top:3.6vh">Ularni ushlab turuvchi institutlar</div>
+      <div class="chips">${["⚖️ Mulk va patent huquqi", "🏛️ Mustaqil sud va shartnoma", "🌐 Iste’dodlar uchun ochiq eshik", "🏦 Kapital bozori"].map((c, i) => `<span class="chip a" style="--d:${14 + i * .6}">${c}</span>`).join("")}</div>` },
+  /* 21 */ { type: "quiz", qid: "q9" },
+  /* 22 */ { type: "quiz", qid: "q6" },
+  /* 23 */ { type: "quiz", qid: "q7" },
+  /* 24 */ { type: "gameintro" },
+  /* 25 */ { type: "vote", vote: "country" },
+  /* 26 */ { type: "vote", vote: "inst" },
+  /* 27 */ { type: "reveal", g: 0 },
+  /* 28 */ { type: "reveal", g: 1 },
+  /* 29 */ { type: "reveal", g: 2 },
+  /* 30 */ { type: "content", render: () => `
+      ${K("O‘YIN XULOSASI")}
+      ${T("Davlatlarni <em>pul emas, qoidalar</em> boyitadi")}
+      ${cards([
+        { ic: "✅", h: "Inkluziv institutlar", p: "Mulk himoyasi, ochiq bozor, mustaqil sud — har kim o‘z mehnati va g‘oyasidan foyda ko‘radi" },
+        { ic: "⛔", h: "Ekstraktiv institutlar", p: "Boylik va hokimiyat tor guruh qo‘lida — qolganlar uchun harakat qilishning ma’nosi qolmaydi", cls: "red" }], 2)}
+      ${TAKE("Asemo‘g‘lu, Jonson va Robinson bu g‘oya uchun 2024-yilda <span>Nobel mukofoti</span>ni olishdi. Ulardan ikkitasi — Asemo‘g‘lu va Jonson — <span>MIT</span> professorlari.")}` },
+  /* 31 */ { type: "content", render: () => `
+      ${K("O‘ZBEKISTON UCHUN SABOQ")}
+      ${T("Laboratoriya qurish — <em>yo‘lning yarmi</em>")}
+      ${cards([
+        { ic: "🔁", h: "Texnologiya transferi", p: "Ixtironi patent va litsenziyaga aylantiradigan idoralar" },
+        { ic: "💸", h: "Venchur moliya", p: "Xatarli, lekin istiqbolli g‘oyaga pul tikadigan investorlar", cls: "gold" },
+        { ic: "⚖️", h: "Mulk va patent himoyasi", p: "Olim o‘z ixtirosidan foyda ko‘rishiga ishonch" },
+        { ic: "🤝", h: "Universitet — biznes ko‘prigi", p: "Professor kompaniyaga maslahatchi, talaba — amaliyotchi", cls: "gold" },
+        { ic: "🌐", h: "Ochiqlik", p: "Xalqaro hamkorlik va iste’dodlar almashinuvi" },
+        { ic: "🧭", h: "Barqaror qoidalar", p: "Investor 10 yil oldinni ko‘ra olishi kerak", cls: "gold" }], 3)}
+      ${TAKE("Kapital uskunani sotib oladi, <span>institutlar</span> esa undan natija chiqaradi.", 10)}` },
+  /* 32 */ { type: "quiz", qid: "q8" },
+  /* 33 */ { type: "quiz", qid: "q10" },
+  /* 34 */ { type: "results" },
+  /* 35 */ { type: "content", thanks: true, render: () => `<div class="center">
+      ${K("MIT · YALE · STANFORD · TIIAME")}
+      <div class="big grad a" style="--d:1;font-size:10vh;padding:.5vh 0">E’tiboringiz uchun rahmat!</div>
+      <div class="a" style="--d:3;width:7vw;height:3px;background:var(--gold);margin:3vh auto"></div>
+      <div class="sub a" style="--d:4;color:#fff;font-size:3vh;max-width:62vw;line-height:1.4">Bugun bilim, qoida va ishonch qanday qilib <span style="color:var(--gold)">boylikka</span> aylanishini ko‘rdik.</div>
+      <div class="sub a" style="--d:7;font-size:2.4vh;margin-top:3vh">Taqdimotchi: <b style="color:#fff">${PRESENTER}</b></div></div>` }
+];
+const TOTAL = S.length;
+
+/* ===================================================================
+   HOST (proyektor ekrani)
+   =================================================================== */
+function host() {
+  document.body.classList.add("host");
+  startNet(false);
+  let room = P.get("room");
+  if (!room) { room = "1122"; history.replaceState(null, "", `?host=1&room=${room}${LOCAL && P.get("local") ? "&local=1" : ""}`); }
+  const R = "rooms/" + room;
+  const base = location.origin + location.pathname.replace(/index\.html$/, "");
+  const joinUrl = `${base}?room=${room}${P.get("local") === "1" ? "&local=1" : ""}`;
+  const QR = qrSvg(joinUrl);
+
+  let st = { slide: -1, phase: "show" };
+  let players = {}, scores = {}, game = {}, results = {}, live = {}, unLive = null;
+  let lastKey = "", tickSec = -1, autoT = null, closing = false, needs = false;
+
+  const app = $("#app");
+  app.innerHTML = `
+    <div id="lobby">
+      <div class="bigqr">${QR}</div>
+      <h2>Skanerlang va qo‘shiling · <span>XONA ${room}</span></h2>
+      <div class="url">${esc(joinUrl)}</div>
+      <div class="names" id="lnames"></div>
+      <div class="pl" id="lcount">0 ISHTIROKCHI</div>
+      <button class="pbtn go" id="lgo">▶ INTRONI BOSHLASH</button>
+    </div>
+    <div id="stage" class="hidden">
+      <div class="topbar"><div>${HEADER}</div><div class="r"><span id="sno">01 / ${TOTAL}</span> · <span class="live">● JONLI</span></div></div>
+      <div id="slide"></div>
+      <div class="bottombar">
+        <div class="joinbox"><div class="qr">${QR}</div><div>XONA · <b>${room}</b><br><span id="pc">0 ishtirokchi</span></div></div>
+        <div class="ctrls">
+          <button class="cbtn" id="bprev" title="Orqaga">◀</button>
+          <button class="pbtn" id="bnext">Keyingi ▶</button>
+          <button class="cbtn" id="bmute" title="Ovoz">🔊</button>
+          <button class="cbtn" id="bfs" title="To‘liq ekran">⛶</button>
+        </div>
+      </div>
+    </div>`;
+
+  $("#lgo").onclick = () => { ac(); startIntro(); };
+  $("#bnext").onclick = () => next();
+  $("#bprev").onclick = () => prev();
+  $("#bmute").onclick = () => { setMuted(!muted); $("#bmute").textContent = muted ? "🔇" : "🔊"; };
+  $("#bfs").onclick = fs;
+  document.addEventListener("keydown", e => {
+    if ($("#intro")) { if (e.key === "Escape" || e.key === "ArrowRight") endIntro(); return; }
+    if (e.key === "ArrowRight" || e.key === " " || e.key === "PageDown" || e.key === "Enter") { e.preventDefault(); if (st.slide < 0) { ac(); startIntro(); } else next(); }
+    else if (e.key === "ArrowLeft" || e.key === "PageUp") prev();
+    else if (e.key === "f" || e.key === "F") fs();
+    else if (e.key === "m" || e.key === "M") $("#bmute").click();
+  });
+  document.addEventListener("pointerdown", () => { ac(); if (st.slide < 0) music("bgm", true, 0.35); }, { once: true });
+  function fs() { try { if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); } catch (e) { } }
+
+  // --- obunalar ---
+  DB.on(R + "/players", v => { players = v || {}; assignGroups(); onLive(); });
+  DB.on(R + "/scores", v => { scores = v || {}; onLive(); });
+  DB.on(R + "/game", v => { game = v || {}; if (needs) render(true); else onLive(); });
+  DB.on(R + "/results", v => { results = v || {}; if (needs) render(true); });
+  DB.get(R + "/state").then(v => { if (v && typeof v.slide === "number") { st = v; render(true); } else { write(); render(true); } });
+
+  function write() { DB.set(R + "/state", st); }
+  function setState(ns) { st = Object.assign({}, ns); write(); render(); }
+
+  function assignGroups() {
+    const cnt = [0, 0, 0]; for (const id in players) if (players[id].group != null) cnt[players[id].group]++;
+    for (const id in players) if (players[id].group == null && players[id].name) {
+      const m = Math.min(...cnt); const c = [0, 1, 2].filter(g => cnt[g] === m); const g = c[Math.floor(Math.random() * c.length)];
+      cnt[g]++; players[id].group = g; DB.set(`${R}/players/${id}/group`, g);
+    }
+  }
+  const plist = () => Object.entries(players).filter(([, p]) => p && p.name).map(([id, p]) => Object.assign({ id }, p));
+  const groupMembers = g => plist().filter(p => p.group === g);
+
+  function initialPhase(s) { return { quiz: "read", vote: "read", reveal: "warp", results: "board" }[s.type] || "show"; }
+  function go(i) {
+    if (i < 0) i = 0; if (i >= TOTAL) i = TOTAL - 1;
+    setState({ slide: i, phase: initialPhase(S[i]), qStart: 0, dur: 0 });
+  }
+  function prev() { if (st.slide > 0) go(st.slide - 1); }
+  async function next() {
+    if (closing) return;
+    const s = S[st.slide]; if (!s) return;
+    if (s.type === "quiz") {
+      if (st.phase === "read") { sfx("pop"); setState({ slide: st.slide, phase: "open", qStart: now(), dur: QUIZ[s.qid].dur }); }
+      else if (st.phase === "open") await closeQuiz();
+      else go(st.slide + 1);
+    } else if (s.type === "vote") {
+      if (st.phase === "read") { sfx("pop"); setState({ slide: st.slide, phase: "open", qStart: now(), dur: 45 }); }
+      else if (st.phase === "open") await closeVote();
+      else go(st.slide + 1);
+    } else if (s.type === "reveal") {
+      if (st.phase === "warp") setState(Object.assign({}, st, { phase: "show" })); else go(st.slide + 1);
+    } else if (s.type === "results") {
+      if (st.phase === "board") setState(Object.assign({}, st, { phase: "drum" }));
+      else if (st.phase === "drum") setState(Object.assign({}, st, { phase: "win" }));
+      else go(st.slide + 1);
+    } else if (st.slide < TOTAL - 1) go(st.slide + 1);
+  }
+
+  async function closeQuiz() {
+    closing = true; const s = S[st.slide]; const q = QUIZ[s.qid];
+    try {
+      const existing = await DB.get(`${R}/results/${s.qid}`);
+      const upd = {};
+      if (!existing) {
+        const ans = (await DB.get(`${R}/answers/${s.qid}`)) || {}; const counts = [0, 0, 0, 0]; const pts = {};
+        const sc = (await DB.get(`${R}/scores`)) || {};
+        for (const pid in ans) {
+          const a = ans[pid]; if (a == null || a.a == null) continue; counts[a.a]++;
+          if (a.a === q.c) { const el = Math.max(0, ((a.t || st.qStart) - st.qStart) / 1000); const p = Math.round(1000 - 500 * Math.min(1, el / q.dur)); pts[pid] = p; sc[pid] = (sc[pid] || 0) + p; upd["scores/" + pid] = sc[pid]; }
+          else pts[pid] = 0;
+        }
+        upd["results/" + s.qid] = { counts, c: q.c, pts };
+        results[s.qid] = upd["results/" + s.qid];
+      }
+      st = Object.assign({}, st, { phase: "reveal" }); upd.state = st;
+      await DB.update(R, upd); sfx("ok"); render();
+    } finally { closing = false; }
+  }
+
+  async function closeVote() {
+    closing = true; const s = S[st.slide];
+    try {
+      const v = (await DB.get(`${R}/votes/${s.vote}`)) || {}; const upd = {};
+      if (s.vote === "country") {
+        const tal = [{}, {}, {}];
+        for (const pid in v) { const p = players[pid]; if (!p || p.group == null) continue; tal[p.group][v[pid]] = (tal[p.group][v[pid]] || 0) + 1; }
+        const taken = new Set(), pick = {};
+        const order = [0, 1, 2].sort((a, b) => Object.values(tal[b]).reduce((x, y) => x + y, 0) - Object.values(tal[a]).reduce((x, y) => x + y, 0));
+        for (const g of order) {
+          const cand = Object.keys(tal[g]).map(Number).sort((a, b) => (tal[g][b] - tal[g][a]) || (Math.random() - .5));
+          let c = cand.find(x => !taken.has(x));
+          if (c == null) { const free = COUNTRIES.map((_, i) => i).filter(i => !taken.has(i)); c = free[Math.floor(Math.random() * free.length)]; }
+          taken.add(c); pick[g] = c;
+        }
+        upd["game/country"] = pick;
+      } else {
+        const tal = [{}, {}, {}];
+        for (const pid in v) { const p = players[pid]; if (!p || p.group == null) continue; tal[p.group][v[pid]] = (tal[p.group][v[pid]] || 0) + 1; }
+        const ch = {}, bonus = {};
+        for (const g of [0, 1, 2]) {
+          const cand = Object.keys(tal[g]).map(Number).sort((a, b) => (tal[g][b] - tal[g][a]) || (Math.random() - .5));
+          ch[g] = cand.length ? cand[0] : Math.floor(Math.random() * 4);
+          const ci = (game.country || {})[g]; const cs = ci != null ? CASES[COUNTRIES[ci].opts[ch[g]][1]] : null;
+          bonus[g] = cs && cs.good ? GAME_BONUS : 0;
+        }
+        upd["game/choice"] = ch; upd["game/bonus"] = bonus;
+      }
+      st = Object.assign({}, st, { phase: "done" }); upd.state = st;
+      await DB.update(R, upd); sfx("ok"); render();
+    } finally { closing = false; }
+  }
+
+  // --- taymer ---
+  setInterval(() => {
+    const s = S[st.slide]; const el = $("#timer");
+    if (!s || st.phase !== "open" || !(s.type === "quiz" || s.type === "vote")) { tickSec = -1; return; }
+    const rem = Math.max(0, st.dur - (now() - st.qStart) / 1000); const sec = Math.ceil(rem);
+    if (el) { el.textContent = sec; el.classList.toggle("low", sec <= 5); }
+    if (sec !== tickSec) { tickSec = sec; if (sec <= 5 && sec > 0) sfx("beep", false); else if (sec > 0) sfx("tick"); }
+    if (rem <= 0 && !closing) { if (s.type === "quiz") closeQuiz(); else closeVote(); }
+    if (s.type === "quiz" && !closing) { const n = plist().length; if (n > 0 && (live.answered || 0) >= n && rem < st.dur - 1.5) closeQuiz(); }
+  }, 200);
+
+  // --- slaydga xos jonli obunalar ---
+  function subLive() {
+    if (unLive) { unLive(); unLive = null; } live = {};
+    const s = S[st.slide]; if (!s) return;
+    if (s.type === "quiz") unLive = DB.on(`${R}/answers/${s.qid}`, v => { live.answers = v || {}; live.answered = Object.keys(live.answers).length; onLive(); });
+    if (s.type === "vote") unLive = DB.on(`${R}/votes/${s.vote}`, v => { live.votes = v || {}; onLive(); });
+  }
+
+  function groupScores() {
+    return GROUPS.map((g, i) => { const m = groupMembers(i); const sum = m.reduce((a, p) => a + (scores[p.id] || 0), 0); const avg = m.length ? Math.round(sum / m.length) : 0; const b = (game.bonus || {})[i] || 0; return { i, name: g.name, color: g.color, members: m.length, avg, bonus: b, total: avg + b }; });
+  }
+
+  // --- chizish ---
+  function render(force) {
+    const key = st.slide + "|" + st.phase;
+    if (st.slide < 0) { $("#lobby").classList.remove("hidden"); $("#stage").classList.add("hidden"); onLive(); return; }
+    $("#lobby").classList.add("hidden"); $("#stage").classList.remove("hidden");
+    const s = S[st.slide]; const sameSlide = lastKey.split("|")[0] === String(st.slide);
+    if (key === lastKey && !force) { onLive(); return; }
+    if (!sameSlide) { subLive(); music("bgm", false); }
+    lastKey = key; clearTimeout(autoT);
+    $("#sno").textContent = String(st.slide + 1).padStart(2, "0") + " / " + TOTAL;
+    const el = $("#slide"); el.className = sameSlide && !force ? "noanim" : ""; needs = false;
+    el.innerHTML = `<div class="sl">${renderSlide(s)}</div>`;
+    $("#bnext").innerHTML = primaryLabel(s);
+    afterRender(s, el, sameSlide);
+    onLive();
+  }
+
+  function primaryLabel(s) {
+    if (s.type === "quiz") return { read: "🔓 BOSHLASH", open: "Javobni ko‘rsatish ▶", reveal: "Keyingi ▶" }[st.phase] || "Keyingi ▶";
+    if (s.type === "vote") return { read: "🔓 Ovoz berishni boshlash", open: "Ovozni yakunlash ▶", done: "Keyingi ▶" }[st.phase];
+    if (s.type === "reveal") return st.phase === "warp" ? "Natijani ko‘rsatish ▶" : "Keyingi ▶";
+    if (s.type === "results") return { board: "🥁 G‘olibni e’lon qilish", drum: "…", win: "Yakunlash ▶" }[st.phase];
+    if (s.thanks) return "✓";
+    if (st.slide === 0) return "Boshlaymiz ▶";
+    return "Keyingi ▶";
+  }
+
+  function renderSlide(s) {
+    if (s.type === "content") return s.render();
+    if (s.type === "quiz") return renderQuiz(s);
+    if (s.type === "gameintro") return `
+      ${K("JONLI O‘YIN · INSTITUTLAR LABORATORIYASI")}
+      ${T("Siz — <em>hukumatsiz</em>. Qaysi qoidani tanlaysiz?")}
+      ${SUB("Har bir guruh bitta davlatni tanlaydi va unga iqtisodiy institut joriy qiladi. Keyin tarix natijani haqiqiy raqamlarda ko‘rsatadi.")}
+      <div class="groups" id="glive"></div>
+      ${TAKE("Inkluziv yo‘lni tanlagan guruhga <span>+1500 ball</span>. Variantlarda maslahat yo‘q — ehtiyot bo‘ling!", 6)}`;
+    if (s.type === "vote" && s.vote === "country") return `
+      <div class="qhead"><div>${K("1-BOSQICH · DAVLAT TANLANG")}${T("Guruhingiz bilan <em>bitta davlatni</em> tanlang")}
+        <div class="acount a" style="--d:2">${st.phase === "read" ? "Guruhingiz bilan maslahatlashing — ovoz berish tez orada ochiladi" : st.phase === "open" ? "📱 Telefoningizda ovoz bering · bitta davlatni ikki guruh ololmaydi" : "Davlatlar taqsimlandi!"}</div></div>
+        ${st.phase === "open" ? `<div class="timer" id="timer">${st.dur}</div>` : ""}</div>
+      <div class="ggrid">${COUNTRIES.map((c, i) => `<div class="cty a" id="ct${i}" style="--d:${2 + i * .4}"><div class="fl">${c.flag}</div><h4>${c.name}</h4><div class="yy">${c.year}-YIL</div><div class="sit">${c.sit}</div><div class="votes" id="cv${i}"></div><div class="who" id="cw${i}"></div></div>`).join("")}</div>`;
+    if (s.type === "vote" && s.vote === "inst") {
+      const gc = game.country || {}; if (gc[0] == null) needs = true;
+      return `<div class="qhead"><div>${K("2-BOSQICH · INSTITUT TANLANG")}${T("Davlatingizga qaysi <em>qoidani</em> joriy qilasiz?")}
+        <div class="acount a" style="--d:2">${st.phase === "read" ? "Variantlarni o‘qing va guruhingiz bilan maslahatlashing" : st.phase === "open" ? "📱 Telefoningizda ovoz bering" : "Tanlovlar qabul qilindi. Endi tarix gapiradi…"}</div></div>
+        ${st.phase === "open" ? `<div class="timer" id="timer">${st.dur}</div>` : ""}</div>
+      <div class="groups">${GROUPS.map((g, i) => { const c = COUNTRIES[gc[i]]; return `<div class="grp a" style="--d:${3 + i};--gc:${g.color}"><h3>${g.emoji} ${g.name}</h3>
+        ${c ? `<div class="cc">${c.flag} ${c.name}, ${c.year}</div><div class="n">${c.sit}</div>${c.opts.map((o, k) => `<div class="op"><b style="color:var(--gold)">${LETTERS[k]})</b> ${o[0]}</div>`).join("")}` : `<div class="n">Davlat tanlanmagan</div>`}
+        <div class="n" id="iv${i}" style="margin-top:1.4vh"></div></div>`; }).join("")}</div>`;
+    }
+    if (s.type === "reveal") return renderReveal(s);
+    if (s.type === "results") return renderResults();
+    return "";
+  }
+
+  function renderQuiz(s) {
+    const q = QUIZ[s.qid]; const r = results[s.qid]; const rev = st.phase === "reveal"; const locked = st.phase === "read"; if (rev && !r) needs = true;
+    const total = r ? r.counts.reduce((a, b) => a + b, 0) || 1 : 1;
+    return `<div class="qhead"><div>${K(`TEST ${q.n}/10 · TELEFONDA JAVOB BERING!`)}<h1 class="a" style="--d:1">${q.q}</h1>
+        <div class="acount a" style="--d:2"><b id="acnt">0</b> / <span id="pcnt">0</span> javob berdi</div></div>
+        <div class="timer a" id="timer" style="--d:1">${rev ? "✓" : q.dur}</div></div>
+      <div class="answers ${locked ? "locked" : ""} ${rev ? "reveal" : ""}">
+        ${q.a.map((t, i) => `<div class="ans ${LETTERS[i]} ${rev ? (i === q.c ? "right" : "wrong") : ""} a" style="--d:${3 + i * .6}"><span class="sh">${SHAPES[i]}</span><span>${t}</span>${rev && r ? `<span class="cnt">${r.counts[i]}</span><span class="bar" style="width:${100 * r.counts[i] / total}%"></span>` : ""}</div>`).join("")}
+        ${locked ? `<div class="lock"><div class="pad">🔒</div><h2>Savolni o‘qing</h2><p>Telefonlar «BOSHLASH» bosilgach ochiladi</p></div>` : ""}
+      </div>`;
+  }
+
+  function revealData(g) {
+    const ci = (game.country || {})[g], oi = (game.choice || {})[g];
+    if (ci == null || oi == null) return null;
+    const c = COUNTRIES[ci], opt = c.opts[oi], cs = CASES[opt[1]];
+    const goodOpt = c.opts.find(o => CASES[o[1]].good); const badOpts = c.opts.filter(o => !CASES[o[1]].good);
+    return { c, opt, cs, good: CASES[goodOpt[1]], bad: CASES[badOpts[0][1]] };
+  }
+  function renderReveal(s) {
+    const g = GROUPS[s.g], d = revealData(s.g);
+    if (!d) { needs = true; return `<div class="center">${K(g.name.toUpperCase() + " GURUH")}<div class="big a" style="--d:1">Ma’lumot yo‘q</div><div class="sub">Avval davlat va institut tanlang</div></div>`; }
+    if (st.phase === "warp") return `<div class="warp">
+        <div class="kick a" style="color:${g.color}">${g.emoji} ${g.name.toUpperCase()} GURUH · ${d.c.flag} ${d.c.name.toUpperCase()}</div>
+        <div class="sub a" style="--d:1;color:#fff;font-size:2.8vh;max-width:70vw;text-align:center">Tanlangan qoida: «${d.opt[0]}»</div>
+        <div class="yc" id="yc">${d.c.year}</div><div class="wl">YILLAR O‘TMOQDA…</div></div>`;
+    const cs = d.cs;
+    return `${K(`${g.emoji} ${g.name.toUpperCase()} GURUH · ${d.c.flag} ${d.c.name.toUpperCase()} · ${d.c.year} → BUGUN`)}
+      <div class="verdict ${cs.good ? "good" : "bad"} a" style="--d:1">${cs.good ? "📈 Mamlakat gullab-yashnadi!" : "📉 Mamlakat inqirozga yuz tutdi"}</div>
+      <div class="sub a" style="--d:2">Bu yo‘lni haqiqatda <b style="color:#fff">${cs.name}</b> tanlagan edi</div>
+      <div class="res"><div>${cs.facts.map((f, i) => `<div class="fact a" style="--d:${3 + i}"><b>0${i + 1}</b><span>${f}</span></div>`).join("")}</div>
+        <div><div class="gdpbox a" style="--d:4"><div class="kick" style="margin:0">AHOLI JON BOSHIGA YaIM · BUGUN</div><div class="v" style="color:${cs.good ? "var(--teal)" : "var(--red)"}">${cs.gdp === "—" ? "Davlat tarqab ketdi" : cs.gdp}</div>
+          ${cs.good ? `<div class="chip" style="display:inline-block;margin-top:1vh;background:${g.color};color:#000">+${GAME_BONUS} ball guruhga</div>` : `<div class="chip" style="display:inline-block;margin-top:1vh">+0 ball</div>`}</div>
+          <div class="alt a" style="--d:6">${cs.good ? `Boshqa yo‘l qanday bo‘lardi? <b style="color:#fff">${d.bad.name}</b>: ${d.bad.facts[d.bad.facts.length - 1]}` : `To‘g‘ri yo‘l bo‘lganida: <b style="color:#fff">${d.good.name}</b> — ${d.good.facts[d.good.facts.length - 1]}`}</div></div></div>
+      ${SRC("Jahon banki (aholi jon boshiga YaIM, AQSh dollari); BMT; XVF; tarixiy tadqiqotlar")}`;
+  }
+
+  function renderResults() {
+    const gs = groupScores(); const mx = Math.max(1, ...gs.map(x => x.total));
+    const top = plist().map(p => ({ name: p.name, g: p.group, s: scores[p.id] || 0 })).sort((a, b) => b.s - a.s).slice(0, 5);
+    if (st.phase === "board") return `${K("NATIJALAR")}${T("Guruhlar <em>reytingi</em>")}
+      <div class="board"><div>${gs.map((x, k) => `<div class="gbar a" style="--d:${2 + k}"><div class="nm" style="color:${x.color}">${GROUPS[x.i].emoji} ${x.name}</div><div class="tr"><div class="fi" data-w="${100 * x.total / mx}" style="background:${x.color}">${x.total}</div></div></div>`).join("")}
+        <div class="sub a" style="--d:6;font-size:1.8vh">Guruh bali = a’zolar o‘rtacha test bali + o‘yin bonusi</div></div>
+        <div class="a" style="--d:4"><div class="kick">ENG YAXSHI 5 O‘YINCHI</div><ol class="top5">${top.map((p, i) => `<li><span>${i + 1}. ${esc(p.name)} <span style="color:${p.g != null ? GROUPS[p.g].color : "#fff"}">●</span></span><b>${p.s}</b></li>`).join("") || "<li>Hali ishtirokchi yo‘q</li>"}</ol></div></div>`;
+    if (st.phase === "drum") return `<div class="center"><div class="big a" style="font-size:7vh;color:var(--gold)">Va bugungi g‘olib…</div><div class="sub a" style="--d:2">«Institutlar laboratoriyasi» g‘olibi</div></div>`;
+    const w = gs.slice().sort((a, b) => b.total - a.total)[0]; const best = top[0];
+    return `<div class="center">${K("FINAL · YAKUNIY NATIJA")}
+      <div class="big a" style="--d:1;font-size:12vh;color:${w.color};text-shadow:0 0 60px ${w.color}">${GROUPS[w.i].emoji} ${w.name} guruh!</div>
+      <div class="sub a" style="--d:3;font-size:3vh;color:#fff">${w.total} ball bilan g‘olib</div>
+      ${best ? `<div class="card gold a" style="--d:5;margin-top:4vh;min-width:30vw"><div class="tag">ENG YAXSHI O‘YINCHI</div><h3 style="font-size:4vh">🏆 ${esc(best.name)}</h3><div class="num">${best.s} ball</div></div>` : ""}</div>`;
+  }
+
+  function afterRender(s, el, sameSlide) {
+    // raqamlarni sanash
+    el.querySelectorAll("[data-count]").forEach(n => {
+      const to = parseFloat(n.dataset.count), pre = n.dataset.pre, suf = n.dataset.suf, dec = to % 1 ? 1 : 0, t0 = performance.now() + 500;
+      (function f(t) { const k = Math.min(1, Math.max(0, (t - t0) / 1600)); const e = 1 - Math.pow(1 - k, 3); const v = to * e;
+        n.textContent = pre + (dec ? v.toFixed(1).replace(".", ",") : Math.round(v).toLocaleString("ru-RU").replace(/,/g, " ")) + suf; if (k < 1) requestAnimationFrame(f); })(performance.now());
+    });
+    if (!sameSlide && (s.type === "content" || s.type === "gameintro")) sfx("whoosh");
+    if (s.type === "quiz" && st.phase === "reveal") { /* ovoz closeQuiz'da */ }
+    if (s.type === "reveal" && st.phase === "warp") {
+      const d = revealData(s.g); if (!d) return; sfx("warp");
+      const y0 = d.c.year, y1 = d.c.end, t0 = performance.now();
+      (function f(t) { const k = Math.min(1, (t - t0) / 3200); const yc = $("#yc"); if (!yc) return; yc.textContent = Math.round(y0 + (y1 - y0) * (k * k)); if (k < 1) requestAnimationFrame(f); })(t0);
+      autoT = setTimeout(() => { if (st.slide === S.indexOf(s) && st.phase === "warp") next(); }, 4200);
+    }
+    if (s.type === "reveal" && st.phase === "show") { const d = revealData(s.g); if (d) { if (d.cs.good) { sfx("fanfare"); confetti(140); } else sfx("no"); } }
+    if (s.type === "results") {
+      if (st.phase === "board") { setTimeout(() => el.querySelectorAll(".fi").forEach(f => f.style.width = f.dataset.w + "%"), 300); sfx("whoosh"); }
+      if (st.phase === "drum") { sfx("drum", 3.2); autoT = setTimeout(() => { if (S[st.slide].type === "results" && st.phase === "drum") next(); }, 3400); }
+      if (st.phase === "win") { sfx("hit"); setTimeout(() => sfx("fanfare"), 250); confetti(320); setTimeout(() => confetti(200), 1500); music("finalMusic", true, 0.6); }
+    }
+    if (s.thanks) { confetti(160); }
+    if (s.type === "vote" && st.phase === "done") sfx("fanfare");
+  }
+
+  function onLive() {
+    const n = plist().length;
+    const lc = $("#lcount"); if (lc) lc.textContent = n + " ISHTIROKCHI";
+    const ln = $("#lnames"); if (ln && st.slide < 0) ln.innerHTML = plist().map(p => `<span style="border-left:3px solid ${p.group != null ? GROUPS[p.group].color : "#fff"}">${esc(p.name)}</span>`).join("");
+    const pc = $("#pc"); if (pc) pc.textContent = n + " ishtirokchi";
+    const s = S[st.slide]; if (!s) return;
+    if (s.type === "quiz") { const a = $("#acnt"); if (a) a.textContent = live.answered || 0; const p = $("#pcnt"); if (p) p.textContent = n; }
+    if (s.type === "gameintro") { const gl = $("#glive"); if (gl) gl.innerHTML = GROUPS.map((g, i) => { const m = groupMembers(i); return `<div class="grp" style="--gc:${g.color}"><h3>${g.emoji} ${g.name}</h3><div class="n">${m.length} a’zo</div><div class="mm">${m.map(p => `<span>${esc(p.name)}</span>`).join("")}</div></div>`; }).join(""); }
+    if (s.type === "vote" && s.vote === "country") {
+      const vv = live.votes || {}; const per = COUNTRIES.map(() => []);
+      for (const pid in vv) { const p = players[pid]; if (p && p.group != null && per[vv[pid]]) per[vv[pid]].push(p.group); }
+      COUNTRIES.forEach((c, i) => { const v = $("#cv" + i); if (v) v.innerHTML = per[i].map(g => `<i style="background:${GROUPS[g].color}"></i>`).join(""); });
+      const gc = game.country || {};
+      COUNTRIES.forEach((c, i) => { const box = $("#ct" + i), w = $("#cw" + i); if (!box) return; const g = st.phase === "done" ? [0, 1, 2].find(k => gc[k] === i) : undefined;
+        if (g != null) { box.classList.add("taken"); box.style.setProperty("--gc", GROUPS[g].color); w.textContent = GROUPS[g].emoji + " " + GROUPS[g].name; } else { box.classList.remove("taken"); w.textContent = ""; } });
+    }
+    if (s.type === "vote" && s.vote === "inst") {
+      const vv = live.votes || {};
+      GROUPS.forEach((g, i) => { const e = $("#iv" + i); if (!e) return; const m = groupMembers(i).length; const c = Object.keys(vv).filter(pid => players[pid] && players[pid].group === i).length;
+        e.textContent = st.phase === "done" ? "✓ Tanlov qilindi" : `Ovoz berdi: ${c} / ${m}`; });
+    }
+  }
+
+  /* ---------------- INTRO («video») ---------------- */
+  let introT = [], beatT = null, grainRaf = 0;
+  function startIntro() {
+    music("bgm", false); if ($("#intro")) return;
+    const box = document.createElement("div"); box.id = "intro"; box.innerHTML = `<canvas id="grain"></canvas><div class="bars"></div><div id="iscene"></div><div class="flash" id="iflash"></div><button class="skip" id="iskip">O‘tkazib yuborish ▶▶</button>`;
+    document.body.appendChild(box); $("#iskip").onclick = endIntro;
+    music("introMusic", true, 0.7);
+    // donador kino teksturasi
+    const cv = $("#grain"), cx = cv.getContext("2d"); cv.width = 320; cv.height = 180;
+    (function g() { const im = cx.createImageData(320, 180); for (let i = 0; i < im.data.length; i += 4) { const v = Math.random() * 38; im.data[i] = v * 1.1; im.data[i + 1] = v * .8; im.data[i + 2] = v * .6; im.data[i + 3] = 255; } cx.putImageData(im, 0, 0);
+      const gr = cx.createRadialGradient(160, 90, 20, 160, 90, 190); gr.addColorStop(0, "rgba(90,35,10,.25)"); gr.addColorStop(1, "rgba(0,0,0,.9)"); cx.fillStyle = gr; cx.fillRect(0, 0, 320, 180); grainRaf = requestAnimationFrame(g); })();
+    let rate = 1300;
+    function beatLoop() { sfx("beat"); beatT = setTimeout(beatLoop, rate); }
+    const sc = (html) => { const el = $("#iscene"); if (!el) return; const old = el.firstElementChild; if (old) { old.classList.add("out"); old.querySelectorAll("*").forEach(x => x.classList.add("out")); }
+      setTimeout(() => { if ($("#iscene")) $("#iscene").innerHTML = `<div class="scene">${html}</div>`; }, old ? 700 : 0); };
+    const typeIn = (sel, txt, sp) => { let i = 0; const go = () => { const e = $(sel); if (!e) return; e.textContent = txt.slice(0, ++i); sfx("type"); if (i < txt.length) introT.push(setTimeout(go, sp)); }; go(); };
+    const at = (ms, fn) => introT.push(setTimeout(fn, ms));
+    at(0, () => { beatLoop(); sc(`<div class="l1">HAQIQIY TARIX ASOSIDA</div><div class="l2">Uchta universitet. Uch asr. Bitta savol.</div>`); });
+    at(4500, () => { sfx("whoosh"); sc(`<div class="yr">1701</div><div class="pl">KONNEKTIKUT</div><div class="tx">Bir guruh ruhoniylar kichik kollej ochadi.<br>Keyinchalik u <b style="color:#f7c948">Yale</b> nomini oladi.</div>`); });
+    at(10500, () => { sfx("whoosh"); rate = 1100; sc(`<div class="yr">1861</div><div class="pl">MASSACHUSETS</div><div class="tx">Uilyam Barton Rojers yangi turdagi institut uchun nizom oladi:<br>fan va amaliyot — bir joyda. Bu — <b style="color:#f7c948">MIT</b>.</div>`); });
+    at(16500, () => { sfx("whoosh"); rate = 950; sc(`<div class="yr">1885</div><div class="pl">KALIFORNIYA</div><div class="tx">15 yoshli o‘g‘lidan ayrilgan ota-ona<br>boshqa yoshlar uchun universitet qurishga ahd qiladi: <b style="color:#f7c948">Stanford</b>.</div>`); });
+    at(22500, () => { sfx("whoosh"); rate = 780; sc(`<div class="l2" style="font-size:2.8vh;color:#ddd;animation-delay:0s">Bugun ular bilan bog‘liq kompaniyalarning yillik daromadi:</div>
+        <div style="display:flex;gap:8vw;margin-top:5vh"><div><div class="money" id="m1">0</div><div class="ml">MIT bitiruvchilari kompaniyalari</div></div><div><div class="money" id="m2" style="color:#f7c948">0</div><div class="ml">Stanfordga bog‘liq kompaniyalar</div></div></div>`);
+      const t0 = performance.now() + 900; (function f(t) { const k = Math.min(1, Math.max(0, (t - t0) / 2600)); const e = 1 - Math.pow(1 - k, 3); const a = $("#m1"), b = $("#m2"); if (!a) return;
+        a.textContent = (1.9 * e).toFixed(1).replace(".", ",") + " trln $"; b.textContent = (2.7 * e).toFixed(1).replace(".", ",") + " trln $"; if (k < 1) requestAnimationFrame(f); })(performance.now()); sfx("riser", 3.4); });
+    at(29500, () => { rate = 640; sc(`<div class="tx" style="font-size:4.2vh;max-width:70vw;animation-delay:.2s">Har biri alohida davlat bo‘lganida —<br><b style="color:#3ee6c4">dunyoning 10-yirik iqtisodiyoti</b> bo‘lardi.</div>`); });
+    at(34500, () => { rate = 520; sc(`<div class="l1" style="font-size:6vh;letter-spacing:.3em"><span id="qq"></span></div>`); setTimeout(() => typeIn("#qq", "QANDAY QILIB?", 120), 800); });
+    at(38200, () => { clearTimeout(beatT); beatT = null; });
+    at(39200, () => { sfx("hit"); const f = $("#iflash"); if (f) f.classList.add("on"); sc(`<div class="ttl grad">MIT · YALE · STANFORD</div><div class="l2" style="font-size:3.2vh;color:#eee">va ularning dunyo iqtisodiyotiga ta’siri</div><div class="pl" style="margin-top:4vh;animation-delay:1.4s">TAQDIMOTCHI: ${PRESENTER.toUpperCase()}</div>`); });
+    at(46500, endIntro);
+  }
+  function endIntro() {
+    introT.forEach(clearTimeout); introT = []; clearTimeout(beatT); cancelAnimationFrame(grainRaf); music("introMusic", false);
+    const b = $("#intro"); if (b) b.remove(); if (st.slide < 0) go(0);
+  }
+}
+
+/* ===================================================================
+   O'QUVCHI (telefon)
+   =================================================================== */
+function player() {
+  document.body.classList.add("player");
+  startNet(true);
+  const app = $("#app");
+  let room = P.get("room");
+  if (!room) {
+    app.innerHTML = `<div id="player"><div class="ph"><div>${HEADER}</div></div><div class="pbody"><div class="pcard"><h2>Xona kodini kiriting</h2><p>Ekrandagi 4 xonali raqam</p>
+      <input class="pin" id="rin" inputmode="numeric" maxlength="6" placeholder="1234"><button class="pbtn pgo" id="rgo">Kirish ▶</button></div></div></div>`;
+    $("#rgo").onclick = () => { const v = $("#rin").value.trim(); if (v) location.search = "?room=" + encodeURIComponent(v) + (P.get("local") === "1" ? "&local=1" : ""); };
+    return;
+  }
+  const R = "rooms/" + room;
+  const PS = LOCAL ? sessionStorage : localStorage;
+  let pid = PS.getItem("pid"); if (!pid) { pid = "p" + Math.random().toString(36).slice(2, 10); PS.setItem("pid", pid); }
+  let me = null, st = null, scores = {}, game = {}, myAns = {}, myVotes = {}, res = {}, players = {}, lastKey = "";
+
+  DB.on(`${R}/players/${pid}`, v => { me = v; draw(); });
+  DB.on(`${R}/players`, v => { players = v || {}; });
+  DB.on(`${R}/state`, v => { st = v; draw(); });
+  DB.on(`${R}/scores`, v => { scores = v || {}; draw(); });
+  DB.on(`${R}/game`, v => { game = v || {}; draw(); });
+  DB.on(`${R}/results`, v => { res = v || {}; draw(); });
+  DB.on(`${R}/votes/country/${pid}`, v => { myVotes.country = v; draw(); });
+  DB.on(`${R}/votes/inst/${pid}`, v => { myVotes.inst = v; draw(); });
+
+  function frame(body) {
+    const g = me && me.group != null ? GROUPS[me.group] : null;
+    return `<div id="player"><div class="ph"><div>XONA ${esc(room)}</div><div class="me">${me && me.name ? esc(me.name) : ""} ${g ? `<span style="color:${g.color}">● ${g.name}</span>` : ""}</div></div>
+      <div class="pbody">${body}</div><div class="pfoot">${me && me.name ? `Ballingiz: <b style="color:var(--gold)">${scores[pid] || 0}</b> · ` : ""}TIIAME · INSTITUTSIONAL IQTISODIYOT</div></div>`;
+  }
+  const wait = (emoji, h, p) => `<div class="pcard"><div class="big-emoji">${emoji}</div><h2>${h}</h2>${p ? `<p>${p}</p>` : ""}</div>`;
+
+  function draw() {
+    if (!me || !me.name) {
+      if ($("#nin")) return;
+      app.innerHTML = frame(`<div class="pcard"><div class="big-emoji">👋</div><h2>Xush kelibsiz!</h2><p>Ismingizni kiriting — u ekranda ko‘rinadi</p>
+        <input class="pin" id="nin" maxlength="20" placeholder="Ismingiz"><button class="pbtn pgo" id="ngo">Qo‘shilish ▶</button></div>`);
+      const go = () => { const n = $("#nin").value.trim().slice(0, 20); if (!n) return; $("#ngo").disabled = true; DB.set(`${R}/players/${pid}`, { name: n, j: TS() }); };
+      $("#ngo").onclick = go; $("#nin").onkeydown = e => { if (e.key === "Enter") go(); };
+      return;
+    }
+    const key = JSON.stringify([st, me, myVotes, res && st && S[st.slide] && res[S[st.slide].qid], game, scores[pid]]);
+    if (key === lastKey) return; lastKey = key;
+    const g = me.group != null ? GROUPS[me.group] : null;
+    if (!st || st.slide < 0) { app.innerHTML = frame(wait("✅", "Siz qo‘shildingiz!", g ? `Guruhingiz: <br><span class="gbadge" style="background:${g.color}">${g.emoji} ${g.name}</span><br><br>Taqdimot boshlanishini kuting` : "Guruh belgilanmoqda…")); return; }
+    const s = S[st.slide];
+    if (s.type === "quiz") return drawQuiz(s);
+    if (s.type === "vote") return drawVote(s, g);
+    if (s.type === "reveal") { const mine = me.group === s.g; app.innerHTML = frame(wait(mine ? "⏳" : "👀", mine ? "Sizning guruhingiz natijasi!" : `${GROUPS[s.g].name} guruh natijasi`, "Ekranga qarang")); return; }
+    if (s.type === "results") {
+      const arr = Object.entries(scores).sort((a, b) => b[1] - a[1]); const rank = arr.findIndex(x => x[0] === pid) + 1;
+      app.innerHTML = frame(wait(st.phase === "win" ? "🎉" : "🏆", st.phase === "win" ? "Natijalar e’lon qilindi!" : "Natijalar ekranda", `Sizning o‘rningiz: <b style="color:#fff">${rank || "—"}</b> / ${Object.keys(players).length}<br>Ballingiz: <b style="color:var(--gold)">${scores[pid] || 0}</b>`));
+      if (st.phase === "win") confetti(120); return;
+    }
+    if (s.thanks) { app.innerHTML = frame(wait("🙏", "E’tiboringiz uchun rahmat!", `Jami ballingiz: <b style="color:var(--gold)">${scores[pid] || 0}</b>`)); return; }
+    if (s.type === "gameintro") { app.innerHTML = frame(wait("🧪", "Institutlar laboratoriyasi", g ? `Siz <span class="gbadge" style="background:${g.color}">${g.emoji} ${g.name}</span> guruhidasiz.<br><br>Guruhdoshlaringizni toping!` : "")); return; }
+    app.innerHTML = frame(wait("👀", "Ekranga qarang", "Keyingi savol tez orada telefoningizda chiqadi"));
+  }
+
+  function drawQuiz(s) {
+    const q = QUIZ[s.qid]; const r = res[s.qid];
+    if (st.phase === "reveal") {
+      const mine = r && r.pts && r.pts[pid] != null ? r.pts[pid] : null; const a = myAns[s.qid];
+      if (mine > 0) { app.innerHTML = frame(`<div class="pcard"><div class="big-emoji">🎉</div><h2 class="ok">To‘g‘ri!</h2><div class="pts ok">+${mine}</div></div>`); try { navigator.vibrate && navigator.vibrate(80); } catch (e) { } }
+      else app.innerHTML = frame(`<div class="pcard"><div class="big-emoji">${mine === 0 || a != null ? "😕" : "⌛"}</div><h2 class="no">${mine === 0 || a != null ? "Noto‘g‘ri" : "Javob berilmadi"}</h2><p>To‘g‘ri javob: <b style="color:#fff">${LETTERS[q.c]}) ${q.a[q.c]}</b></p></div>`);
+      return;
+    }
+    if (st.phase === "open" && myAns[s.qid] != null) { app.innerHTML = frame(wait("✅", "Javobingiz qabul qilindi", `Siz tanladingiz: <b style="color:#fff">${LETTERS[myAns[s.qid]]}</b><br>Natijani kuting…`)); return; }
+    app.innerHTML = frame(`<div class="pq">${q.n}/10. ${q.q}</div>
+      <div class="pans ${st.phase === "read" ? "locked" : ""}">${q.a.map((t, i) => `<button class="${LETTERS[i]}" data-i="${i}"><span class="sh">${SHAPES[i]}</span><span>${t}</span></button>`).join("")}</div>
+      ${st.phase === "read" ? `<p style="text-align:center;margin-top:14px;color:var(--gold)">🔒 Savolni o‘qing — o‘qituvchi «BOSHLASH»ni bosganda ochiladi</p>` : ""}`);
+    if (st.phase === "open") app.querySelectorAll(".pans button").forEach(b => b.onclick = () => {
+      const i = +b.dataset.i; myAns[s.qid] = i; lastKey = ""; DB.set(`${R}/answers/${s.qid}/${pid}`, { a: i, t: TS() }); draw(); try { navigator.vibrate && navigator.vibrate(30); } catch (e) { } });
+  }
+
+  function drawVote(s, g) {
+    const gc = game.country || {};
+    if (s.vote === "country") {
+      if (st.phase === "done") { const c = COUNTRIES[gc[me.group]]; app.innerHTML = frame(wait(c ? c.flag : "🌍", c ? `Guruhingiz davlati: ${c.name}` : "Davlatlar taqsimlandi", c ? `${c.year}-yil. ${c.sit}` : "")); return; }
+      const sel = myVotes.country;
+      app.innerHTML = frame(`<div class="pq">${st.phase === "read" ? "🔒 Ovoz berish tez orada ochiladi. Guruhingiz bilan maslahatlashing:" : "Guruhingiz uchun davlat tanlang:"}</div>
+        <div class="plist" style="--gc:${g ? g.color : "#3d8bff"}">${COUNTRIES.map((c, i) => `<button data-i="${i}" class="${sel === i ? "sel" : ""} ${st.phase === "read" ? "dis" : ""}"><span style="font-size:24px">${c.flag}</span><span><b>${c.name}, ${c.year}</b><br><small style="color:#cfd6ff">${c.sit}</small></span></button>`).join("")}</div>`);
+      if (st.phase === "open") app.querySelectorAll(".plist button").forEach(b => b.onclick = () => { DB.set(`${R}/votes/country/${pid}`, +b.dataset.i); });
+      return;
+    }
+    const c = COUNTRIES[gc[me.group]];
+    if (!c) { app.innerHTML = frame(wait("⏳", "Kuting…", "")); return; }
+    if (st.phase === "done") { app.innerHTML = frame(wait("📜", "Qoida qabul qilindi!", "Endi tarix gapiradi — ekranga qarang")); return; }
+    const sel = myVotes.inst;
+    app.innerHTML = frame(`<div class="pq">${c.flag} <b>${c.name}, ${c.year}</b><br><small style="color:var(--mut);font-weight:500">${c.sit}</small><br><br>${st.phase === "read" ? "🔒 Variantlarni o‘qing, ovoz berish tez orada ochiladi:" : "Qaysi qoidani joriy qilasiz?"}</div>
+      <div class="pans ${st.phase === "read" ? "locked" : ""}">${c.opts.map((o, i) => `<button class="${LETTERS[i]} ${sel === i ? "sel" : ""}" data-i="${i}"><span class="sh">${SHAPES[i]}</span><span>${o[0]}</span></button>`).join("")}</div>`);
+    if (st.phase === "open") app.querySelectorAll(".pans button").forEach(b => b.onclick = () => { DB.set(`${R}/votes/inst/${pid}`, +b.dataset.i); });
+  }
+}
+
+if (IS_HOST) host(); else player();
+})();
+
+</script>
+</body>
+</html>
