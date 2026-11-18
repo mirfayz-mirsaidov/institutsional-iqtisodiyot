@@ -233,6 +233,34 @@ h1.t{font-size:6.6vh}
 .verdict{font-size:5vh} .fact{font-size:2.6vh;margin-top:2.4vh}
 .gdpbox .v{font-size:9vh} .alt{font-size:2.2vh}
 .gbar .nm{font-size:3.2vh;width:11vw} .gbar .tr{height:7.5vh} .top5 li{font-size:2.8vh}
+/* yumshoq slayd o'tishi */
+#slide > .sl{animation:slin .75s cubic-bezier(.2,.8,.2,1)}
+#slide.noanim > .sl{animation:none}
+@keyframes slin{from{opacity:0;transform:translateX(3vw) scale(.985);filter:blur(4px)}to{opacity:1;transform:none;filter:none}}
+/* Esda tuting */
+.key{margin-top:2.6vh;background:linear-gradient(90deg,rgba(247,201,72,.16),rgba(247,201,72,.04));border:1px solid rgba(247,201,72,.45);border-radius:14px;padding:1.8vh 1.6vw;display:flex;gap:1.2vw;align-items:center;font-size:2.6vh;font-weight:700;line-height:1.35}
+.key b{font-family:var(--mono);font-size:1.6vh;letter-spacing:.18em;color:var(--gold);white-space:nowrap}
+.key span span{color:var(--gold)}
+.card p+p{margin-top:.5vh}
+/* intro qo'shimchalari */
+#intro #ecg{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none}
+#intro #iscene{position:absolute;inset:0;z-index:2}
+#intro .scene.out{animation:fout .75s forwards}
+#intro .irow{display:flex;align-items:center;gap:5vw;text-align:left}
+#intro .artw{flex:none} #intro .art{width:32vw;height:auto;filter:drop-shadow(0 0 12px rgba(247,201,72,.45))}
+#intro .dr{stroke-dasharray:1;stroke-dashoffset:1;animation:draw 3.6s ease forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+#intro .itxt .tx{margin-top:2vh;max-width:40vw}
+#intro .itxt .yr{text-align:left}
+#intro .tx b{color:#f7c948}
+#intro .chain{display:flex;align-items:center;gap:1.2vw;flex-wrap:wrap;justify-content:center}
+#intro .cb{background:rgba(255,255,255,.08);border:1px solid rgba(247,201,72,.5);border-radius:14px;padding:1.6vh 1.4vw;font-size:2.8vh;font-weight:700;color:#fff;opacity:0;animation:popin .6s forwards}
+#intro .ca{color:#f7c948;font-size:3.4vh;opacity:0;animation:fin .5s forwards}
+@keyframes popin{from{opacity:0;transform:scale(.6)}70%{transform:scale(1.08)}to{opacity:1;transform:none}}
+#intro .chart{width:46vw;margin-top:4vh;filter:drop-shadow(0 0 10px rgba(62,230,196,.5))}
+#intro .chart .dr{animation-duration:3s;animation-delay:.8s}
+#intro .bars{z-index:3} #intro .skip{z-index:5} #intro .flash{z-index:4}
+#intro .bars:before,#intro .bars:after{z-index:3}
 
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -537,33 +565,40 @@ const DB = {
    ------------------------------------------------------------------ */
 let AC = null, MG = null, muted = false;
 function ac() { if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)(); if (AC.state === "suspended") AC.resume(); return AC; }
-function master() { const c = ac(); if (!MG) { MG = c.createGain(); MG.gain.value = muted ? 0 : 0.9; MG.connect(c.destination); } return MG; }
-function env(g, t, a, peak, d) { g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + a); g.gain.exponentialRampToValueAtTime(0.0001, t + a + d); }
-function osc(type, f, t, dur, peak, f2) {
+function master() { const c = ac(); if (!MG) { MG = c.createGain(); MG.gain.value = muted ? 0 : 0.9; const cp = c.createDynamicsCompressor(); cp.threshold.value = -18; cp.ratio.value = 4; cp.knee.value = 12; MG.connect(cp).connect(c.destination); } return MG; }
+function env(g, t, a, peak, d) { a = a || 0.01; g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + a); g.gain.exponentialRampToValueAtTime(0.0001, t + a + d); }
+function osc(type, f, t, dur, peak, f2, att) {
   const c = ac(); const o = c.createOscillator(), g = c.createGain(); o.type = type; o.frequency.setValueAtTime(f, t);
-  if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + dur); env(g, t, 0.01, peak, dur); o.connect(g).connect(master()); o.start(t); o.stop(t + dur + 0.05);
+  if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + dur); env(g, t, att || 0.01, peak, dur); o.connect(g).connect(master()); o.start(t); o.stop(t + dur + 0.05);
 }
 let NB = null;
-function noise(t, dur, peak, ftype, f1, f2) {
+function noise(t, dur, peak, ftype, f1, f2, att) {
   const c = ac(); if (!NB) { NB = c.createBuffer(1, c.sampleRate * 3, c.sampleRate); const d = NB.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; }
   const s = c.createBufferSource(); s.buffer = NB; const f = c.createBiquadFilter(); f.type = ftype || "lowpass"; f.frequency.setValueAtTime(f1 || 1000, t);
-  if (f2) f.frequency.exponentialRampToValueAtTime(f2, t + dur); const g = c.createGain(); env(g, t, 0.02, peak, dur);
+  if (f2) f.frequency.exponentialRampToValueAtTime(f2, t + dur); const g = c.createGain(); env(g, t, att || 0.02, peak, dur);
   s.connect(f).connect(g).connect(master()); s.start(t, Math.random()); s.stop(t + dur + 0.05);
 }
 const SFX = {
-  beat() { const t = ac().currentTime; osc("sine", 64, t, 0.16, 1, 40); noise(t, 0.08, 0.25, "lowpass", 180); osc("sine", 58, t + 0.2, 0.22, 0.75, 36); },
-  tick() { const t = ac().currentTime; osc("square", 1900, t, 0.025, 0.06); },
-  beep(hi) { const t = ac().currentTime; osc("sine", hi ? 1320 : 880, t, 0.14, 0.28); },
-  whoosh() { const t = ac().currentTime; noise(t, 1.1, 0.45, "bandpass", 300, 4500); },
-  warp() { const t = ac().currentTime; osc("sawtooth", 70, t, 3, 0.08, 1400); noise(t, 3, 0.22, "bandpass", 200, 6000); osc("sine", 140, t, 3, 0.18, 2200); },
-  ok() { const t = ac().currentTime; osc("triangle", 660, t, 0.15, 0.35); osc("triangle", 990, t + 0.12, 0.35, 0.35); },
-  no() { const t = ac().currentTime; osc("sawtooth", 170, t, 0.4, 0.18, 100); },
-  drum(sec) { const t = ac().currentTime; const n = Math.floor(sec * 20); for (let i = 0; i < n; i++) noise(t + i / 20, 0.05, 0.08 + 0.45 * i / n, "highpass", 900); },
-  fanfare() { const t = ac().currentTime; [523, 659, 784, 1047].forEach((f, i) => { osc("triangle", f, t + i * 0.13, 0.45, 0.3); osc("sawtooth", f / 2, t + i * 0.13, 0.35, 0.05); }); [523, 659, 784, 1047].forEach(f => osc("triangle", f, t + 0.62, 1.6, 0.18)); },
-  pop() { const t = ac().currentTime; osc("sine", 520, t, 0.08, 0.18, 950); },
-  riser(sec) { const t = ac().currentTime; osc("sawtooth", 110, t, sec, 0.06, 900); noise(t, sec, 0.14, "bandpass", 400, 5000); },
-  hit() { const t = ac().currentTime; osc("sine", 55, t, 1.8, 1, 26); noise(t, 1.3, 0.45, "lowpass", 2500, 70); osc("sawtooth", 110, t, 1.3, 0.05, 55); },
-  type() { const t = ac().currentTime; osc("square", 2400 + Math.random() * 600, t, 0.015, 0.03); }
+  // yurak urishi: noutbuk karnaylarida ham aniq eshitiladi (lub-dub)
+  beat(v) { const t = ac().currentTime, k = v || 1;
+    osc("sine", 150, t, 0.16, 0.95 * k, 46); osc("triangle", 95, t, 0.13, 0.45 * k, 42); noise(t, 0.06, 0.4 * k, "lowpass", 700, 120);
+    osc("sine", 135, t + 0.26, 0.2, 0.7 * k, 42); osc("triangle", 85, t + 0.26, 0.16, 0.32 * k, 40); noise(t + 0.26, 0.06, 0.28 * k, "lowpass", 600, 110); },
+  // slayd almashganda: yumshoq havo sadosi + nozik qo'ng'iroqcha
+  slide() { const t = ac().currentTime; noise(t, 0.55, 0.05, "bandpass", 420, 1600, 0.18);
+    osc("sine", 1046.5, t + 0.1, 1.3, 0.05, null, 0.02); osc("sine", 1568, t + 0.18, 1.1, 0.035, null, 0.02); osc("sine", 523.25, t + 0.1, 0.9, 0.04, null, 0.03); },
+  tick() { const t = ac().currentTime; osc("sine", 1250, t, 0.035, 0.045); },
+  beep() { const t = ac().currentTime; osc("sine", 880, t, 0.18, 0.14, null, 0.01); osc("sine", 1760, t, 0.12, 0.04); },
+  whoosh() { const t = ac().currentTime; noise(t, 1.0, 0.16, "bandpass", 300, 2600, 0.3); },
+  swell() { const t = ac().currentTime; osc("sine", 220, t, 1.6, 0.06, 330, 0.6); osc("sine", 330, t, 1.6, 0.04, 495, 0.6); noise(t, 1.4, 0.06, "bandpass", 300, 1800, 0.6); },
+  warp() { const t = ac().currentTime; osc("sine", 110, t, 3, 0.12, 1200, 0.4); osc("sine", 165, t, 3, 0.08, 1800, 0.4); noise(t, 3, 0.12, "bandpass", 200, 4000, 0.6); },
+  ok() { const t = ac().currentTime; [784, 988, 1175].forEach((f, i) => osc("sine", f, t + i * 0.09, 0.6, 0.14, null, 0.01)); },
+  no() { const t = ac().currentTime; osc("triangle", 330, t, 0.35, 0.16, 247); osc("triangle", 262, t + 0.18, 0.45, 0.14, 196); },
+  drum(sec) { const t = ac().currentTime; const n = Math.floor(sec * 18); for (let i = 0; i < n; i++) { noise(t + i / 18, 0.05, 0.05 + 0.3 * i / n, "bandpass", 1800); osc("sine", 110, t + i / 18, 0.06, 0.06 + 0.25 * i / n, 70); } },
+  fanfare() { const t = ac().currentTime; [523, 659, 784, 1047].forEach((f, i) => { osc("triangle", f, t + i * 0.13, 0.45, 0.22); osc("sine", f * 2, t + i * 0.13, 0.3, 0.04); }); [523, 659, 784, 1047].forEach(f => osc("triangle", f, t + 0.62, 1.8, 0.14, null, 0.05)); },
+  pop() { const t = ac().currentTime; osc("sine", 660, t, 0.12, 0.12, 990); },
+  riser(sec) { const t = ac().currentTime; osc("sine", 110, t, sec, 0.08, 880, sec * 0.6); noise(t, sec, 0.08, "bandpass", 400, 4000, sec * 0.6); },
+  hit() { const t = ac().currentTime; osc("sine", 70, t, 2, 1, 30); noise(t, 1.4, 0.35, "lowpass", 2200, 70); osc("sine", 523, t + 0.05, 2.4, 0.08, null, 0.05); osc("sine", 784, t + 0.05, 2.4, 0.06, null, 0.05); },
+  type() { const t = ac().currentTime; osc("sine", 1800 + Math.random() * 400, t, 0.02, 0.025); }
 };
 function sfx(n, a) { if (muted) return; try { SFX[n](a); } catch (e) { } }
 
@@ -644,63 +679,97 @@ const flow = (items, d0 = 3) => `<div class="flow">${items.map((it, i) => `${i ?
 const stats = (items) => `<div class="stats">${items.map((it, i) => `<div class="stat a" style="--d:${3 + i}"><div class="v" data-count="${it[0]}" data-pre="${it[2] || ""}" data-suf="${it[3] || ""}">${it[2] || ""}0${it[3] || ""}</div><div class="l">${it[1]}</div></div>`).join("")}</div>`;
 const chips = (label, arr, d = 10) => `<div class="kick a" style="--d:${d};margin-top:3.4vh">${label}</div><div class="chips">${arr.map((c, i) => `<span class="chip a" style="--d:${d + 1 + i * .5}">${c}</span>`).join("")}</div>`;
 
+const KEY = (t, d = 9) => `<div class="key a" style="--d:${d}"><b>🔑 ESDA TUTING</b><span>${t}</span></div>`;
+const NOT = (arr, d = 5) => `<div class="card red a" style="--d:${d}"><div class="tag" style="color:var(--red)">BU EMAS ✗</div>${arr.map(x => `<p style="margin-top:1.2vh">✗ <b style="color:#fff">${x[0]}</b> — ${x[1]}</p>`).join("")}</div>`;
+
 const S = [
   /* 1 */ { type: "content", render: () => `
-    <div style="display:flex;flex-direction:column;justify-content:center;height:100%">
       ${K("MAVZU · UNIVERSITETLAR VA DUNYO IQTISODIYOTI")}
       ${T(`<em>MIT</em>, <i>Yale</i> va <em>Stanford</em>`)}
-      <h1 class="t a" style="--d:2;font-size:4.4vh;margin-top:1vh">dunyo iqtisodiyotini qanday o‘zgartirdi?</h1>
-      ${SUB("Universitetlar va ularning dunyo iqtisodiyotiga ta’siri", 3)}
-      <div class="a" style="--d:4;margin:3.4vh 0 0;width:7vw;height:3px;background:var(--gold)"></div>
-      <div class="sub a" style="--d:5;color:#fff">Taqdimotchi: <b>${PRESENTER}</b></div>
-      <div class="card gold a" style="--d:7;margin-top:3vh;max-width:44vw;display:flex;gap:1.2vw;align-items:center">
-        <div style="font-size:5vh">📱</div><div><div class="tag">BUGUNGI JONLI O‘YIN</div><h3 style="margin:0">Institutlar laboratoriyasi — telefonlaringizni tayyorlang!</h3><p style="font-size:1.8vh;color:var(--mut)">Pastdagi QR kodni skanerlang</p></div></div>
-    </div>` },
-  /* 2 */ { type: "content", render: () => `<div class="center">
-      ${K("SAVOL")}
-      <div class="big a" style="--d:1">Universitet faqat <span class="grad">diplom</span> beradimi?</div>
-      <div class="sub a" style="--d:4;color:var(--gold);font-size:3vh;margin-top:3vh">🙋 Sizningcha?</div></div>` },
+      <h1 class="t a" style="--d:2;font-size:4.6vh;margin-top:1vh">universitetlari va ularning dunyo iqtisodiyotiga ta’siri</h1>
+      <div class="chips" style="margin-top:3vh">${["🔬 MIT · 1861", "🏛️ Yale · 1701", "🌲 Stanford · 1885"].map((c, i) => `<span class="chip a" style="--d:${3 + i * .5}">${c}</span>`).join("")}</div>
+      <div class="a" style="--d:5;margin:3.4vh 0 0;width:7vw;height:3px;background:var(--gold)"></div>
+      <div class="sub a" style="--d:6;color:#fff">Taqdimotchi: <b>${PRESENTER}</b></div>
+      <div class="card gold a" style="--d:8;margin-top:3vh;max-width:46vw;display:flex;gap:1.2vw;align-items:center">
+        <div style="font-size:5vh">📱</div><div><div class="tag">BUGUNGI JONLI DARS</div><h3 style="margin:0">10 ta test va «Institutlar laboratoriyasi» o‘yini</h3><p style="font-size:1.9vh;color:var(--mut)">Pastdagi QR kodni skanerlang — savollar telefoningizga keladi</p></div></div>` },
+
+  /* 2 */ { type: "content", render: () => `
+      ${K("KIRISH SAVOLI")}
+      ${T("Universitet faqat <em>diplom</em> beradimi?")}
+      ${SUB("🙋 Sizningcha, universitet jamiyatga yana nima beradi?")}
+      ${cards([
+        { ic: "🎓", h: "Diplom va kasb", p: "Talaba bilim oladi, mutaxassis bo‘lib chiqadi. Bu — universitetning eng ko‘zga ko‘rinadigan vazifasi." },
+        { ic: "💡", h: "Yangi bilim va ixtiro", p: "Laboratoriyalarda yangi texnologiyalar tug‘iladi: radar, internet qidiruvi, yangi dorilar.", cls: "gold" },
+        { ic: "🏭", h: "Kompaniya va ish o‘rinlari", p: "Bitiruvchilar va olimlar kompaniya ochadi — millionlab ish o‘rni va trillionlab dollar daromad." }], 3)}
+      ${KEY("Bugun ko‘ramiz: eng kuchli universitetlar uchalasini ham beradi — va shu orqali <span>dunyo iqtisodiyotini</span> o‘zgartiradi.", 7)}` },
+
   /* 3 */ { type: "content", render: () => `
       ${K("ASOS · INSTITUT NIMA?")}
       ${T("Institutlar — jamiyatdagi <em>o‘yin qoidalari</em>")}
-      ${SUB("Duglass Nort, iqtisodiyot bo‘yicha Nobel mukofoti sovrindori (1993)")}
+      ${SUB("Duglass Nort, iqtisodiyot bo‘yicha Nobel mukofoti sovrindori (1993): institutlar — odamlar o‘rtasidagi munosabatni tartibga soluvchi qoidalar")}
       ${cards([
-        { ic: "⚖️", h: "Rasmiy institutlar", p: "Konstitutsiya, qonunlar, mulk huquqi, shartnomalar, mustaqil sud" },
-        { ic: "🤝", h: "Norasmiy institutlar", p: "An’analar, ishonch, odatlar, ish madaniyati", cls: "gold" }], 2)}
-      ${TAKE("Universitet ham institut: u <span>bilim, pul va odamlarni</span> bir-biriga bog‘laydigan qoidalar tizimi.")}` },
+        { ic: "⚖️", h: "Rasmiy institutlar", p: "Konstitutsiya, qonunlar, mulk huquqi, patent, shartnoma, mustaqil sud. Yozilgan va davlat kafolatlagan qoidalar." },
+        { ic: "🤝", h: "Norasmiy institutlar", p: "An’analar, ishonch, odob, ish madaniyati, obro‘. Yozilmagan, lekin hamma amal qiladigan qoidalar.", cls: "gold" },
+        { ic: "🏢", h: "Tashkilotlar — «o‘yinchilar»", p: "Universitet, bank, kompaniya, davlat idoralari. Ular shu qoidalar asosida harakat qiladi." }], 3)}
+      ${KEY("Universitet ham institut: u <span>bilim, pul va odamlarni</span> bir-biriga bog‘laydigan qoidalar tizimi. Qoidalar yaxshi bo‘lsa — bilim boylikka aylanadi.", 7)}` },
+
   /* 4 */ { type: "content", render: () => `
       ${K("UCHTA UNIVERSITET")}
       ${T("Uch xil yo‘l — <em>bitta natija</em>: dunyo miqyosidagi ta’sir")}
       ${cards([
-        { ic: "🔬", tag: "1861 · Kembrij, Massachusets", h: "MIT", p: "Massachusets texnologiya instituti. Shiori: «Aql va qo‘l» — nazariya va amaliyot birga.", num: "27,4 mlrd $" },
-        { ic: "🏛️", tag: "1701 · Nyu-Xeyven, Konnektikut", h: "Yale", p: "AQShdagi eng qadimgi universitetlardan biri. Huquq, siyosat va moliya maktabi.", num: "44,1 mlrd $", cls: "gold" },
-        { ic: "🌲", tag: "1885 · Kaliforniya", h: "Stanford", p: "Kremniy vodiysining yuragi. Muhandislik va tadbirkorlik maktabi.", num: "40,8 mlrd $" }], 3)}
-      <div class="sub a" style="--d:7;font-size:1.9vh">Raqamlar — universitetlarning jamg‘arma fondi (2025 moliya yili)</div>
+        { ic: "🔬", tag: "1861 · Massachusets", h: "MIT", p: "Massachusets texnologiya instituti.<br>Shiori: «Aql va qo‘l» — nazariya va amaliyot birga.<br>Kuchi: muhandislik, texnologiya, ixtiro.", num: "27,4 mlrd $" },
+        { ic: "🏛️", tag: "1701 · Konnektikut", h: "Yale", p: "AQShdagi uchinchi eng qadimgi oliygoh.<br>Kuchi: huquq, siyosat, moliya va iqtisodiyot fani.", num: "44,1 mlrd $", cls: "gold" },
+        { ic: "🌲", tag: "1885 · Kaliforniya", h: "Stanford", p: "Kremniy vodiysining markazi.<br>Kuchi: muhandislik, tadbirkorlik, startaplar va venchur kapital.", num: "40,8 mlrd $" }], 3)}
+      <div class="sub a" style="--d:7;font-size:2vh">Raqamlar — universitetning <b style="color:#fff">jamg‘arma fondi</b> (2025 moliya yili). Fond — universitetga sovg‘a qilingan va investitsiya qilinadigan pul.</div>
       ${SRC("MIT, Yale va Stanford rasmiy moliyaviy hisobotlari, 2025")}` },
+
   /* 5 */ { type: "content", render: () => `
+      ${K("UCHALASINI NIMA BIRLASHTIRADI?")}
+      ${T("Umumiy omil: bilimni <em>biznes bilan bog‘lash</em>")}
+      <div class="cards" style="grid-template-columns:1.15fr 1fr">
+        <div class="card gold a" style="--d:3"><div class="ic">🔗</div><h3>Bilim va innovatsiyani biznes bilan bog‘lash</h3>
+          <p>Laboratoriyadagi g‘oya patentga, patent kompaniyaga, kompaniya esa mahsulot, ish o‘rni va soliqqa aylanadi.</p>
+          <p style="margin-top:1.2vh">Uchala universitet ham olim, talaba, investor va kompaniyani <b style="color:var(--gold)">bir joyga yig‘adi</b>. Boylik aynan shu bog‘lanishdan tug‘iladi.</p></div>
+        ${NOT([["Talabalar sonini doimiy oshirish", "ular sonni emas, sifatni oshiradi"], ["Xarajatlarni keskin kamaytirish", "aksincha, tadqiqotga juda katta mablag‘ sarflaydi"], ["Faqat davlat puliga tayanish", "fondlar, kompaniyalar va xususiy investorlar bilan ishlaydi"]], 4)}
+      </div>
+      ${KEY("MIT, Yale va Stanford ta’siridagi eng muhim umumiy omil — <span>bilim va innovatsiyani biznes bilan bog‘lash</span>.", 7)}` },
+
+  /* 6 */ { type: "quiz", qid: "q1" },
+
+  /* 7 */ { type: "content", render: () => `
       ${K("TARIX · MIT")}
       ${T("Laboratoriyadan <em>sanoatga</em>")}
       ${timeline([
-        ["1861", "Nizom olindi", "Uilyam Barton Rojers fan va amaliyotni birlashtirgan institut ochadi"],
+        ["1861", "Nizom olindi", "Uilyam Barton Rojers fan va amaliyotni birlashtirgan yangi turdagi institut ochadi"],
         ["1940", "Radiatsiya laboratoriyasi", "Ikkinchi jahon urushida radar texnologiyasi shu yerda takomillashtirildi"],
         ["1946", "Birinchi venchur fondlardan biri", "ARD fondi MIT rahbariyati ishtirokida tuziladi — olimlar g‘oyasiga pul tikiladi"],
         ["1957", "DEC kompaniyasi", "ARD 70 ming dollar tikdi — bu sarmoya keyinchalik yuzlab million dollarga aylandi"],
         ["2015", "Bitiruvchilar", "30 mingdan ortiq faol kompaniya hisoblab chiqildi"]])}
+      ${KEY("MITda laboratoriya va sanoat doim <span>yonma-yon</span> bo‘lgan: olim ixtiro qiladi, investor pul tikadi, kompaniya ishlab chiqaradi.", 13)}
       ${SRC("MIT tarixi; Roberts va boshq., MIT Sloan, 2015")}` },
-  /* 6 */ { type: "content", render: () => `
-      ${K("MODEL · MIT")}
-      ${T("Bilim qanday qilib <em>boylikka</em> aylanadi?")}
-      ${flow([["🔬", "Tadqiqot", "Laboratoriyada yangi bilim"], ["⚙️", "Texnologiya", "Patent va prototip"], ["🏭", "Sanoat", "Kompaniya va ish o‘rinlari"], ["📈", "O‘sish", "Soliq, eksport, farovonlik"]])}
-      ${chips("MIT bitiruvchilari yoki olimlari asos solgan kompaniyalar", ["Intel", "Qualcomm", "Bose", "Dropbox", "Boston Dynamics"])}` },
-  /* 7 */ { type: "quiz", qid: "q2" },
+
   /* 8 */ { type: "content", render: () => `
+      ${K("MODEL · MIT")}
+      ${T("MITning iqtisodiy ta’sir modeli")}
+      ${flow([["🔬", "Tadqiqot", "Laboratoriyada yangi bilim yaratiladi"], ["⚙️", "Texnologiya", "Bilim patent va prototipga aylanadi"], ["🏭", "Sanoat", "Kompaniyalar uni ishlab chiqaradi, ish o‘rni yaratadi"], ["📈", "O‘sish", "Soliq, eksport, farovonlik oshadi"]])}
+      <div class="card a" style="--d:11;margin-top:2.6vh"><div class="tag">MISOL · RADAR</div><p>Urush yillari MIT laboratoriyasida radar ustida ishlandi (<b style="color:#fff">tadqiqot</b>) → mikroto‘lqinli radar yaratildi (<b style="color:#fff">texnologiya</b>) → aviatsiya va mudofaa kompaniyalari uni ishlab chiqardi, keyinchalik shu texnologiyadan mikroto‘lqinli pech ham paydo bo‘ldi (<b style="color:#fff">sanoat</b>) → yangi bozorlar va ish o‘rinlari (<b style="color:#fff">o‘sish</b>).</p></div>
+      ${KEY("MIT modeli: <span>Tadqiqot → Texnologiya → Sanoat → O‘sish</span>. Marketing, kredit yoki diplom bu zanjirning boshida emas.", 13)}` },
+
+  /* 9 */ { type: "quiz", qid: "q2" },
+
+  /* 10 */ { type: "content", render: () => `
       ${K("RAQAMLARDA · MIT")}
       ${T("Agar MIT bitiruvchilari <em>davlat</em> bo‘lganida...")}
-      ${stats([[30200, "faol kompaniya"], [4.6, "million ish o‘rni", "", " mln"], [1.9, "yillik daromad", "", " trln $"]])}
-      ${TAKE("Bu — dunyoning <span>10-yirik iqtisodiyotiga</span> teng (2014 holatiga).", 7)}
+      ${stats([[30200, "bitiruvchilar asos solgan faol kompaniya"], [4.6, "million ish o‘rni", "", " mln"], [1.9, "shu kompaniyalarning yillik daromadi", "", " trln $"]])}
+      <div class="cards" style="grid-template-columns:1fr 1fr;margin-top:2.6vh">
+        <div class="card a" style="--d:7"><div class="tag">TAQQOSLASH</div><p>Bu daromad dunyoning <b style="color:var(--gold)">10-yirik iqtisodiyotiga</b> teng — 2014-yilda Rossiya va Hindiston YaIMi oralig‘ida edi.</p></div>
+        <div class="card red a" style="--d:8"><div class="tag" style="color:var(--red)">ADASHMANG</div><p>1,9 trln $ — MITning o‘z daromadi ham, xarajati ham, fondi ham <b style="color:#fff">emas</b>. MIT fondi — 27,4 mlrd $.</p></div></div>
+      ${KEY("1,9 trillion dollar — <span>MIT bitiruvchilari asos solgan kompaniyalarning yillik daromadi</span>.", 10)}
       ${SRC("Roberts, Merrey, Kim — «MITda tadbirkorlik va innovatsiya», MIT Sloan, 2015")}` },
-  /* 9 */ { type: "quiz", qid: "q4" },
-  /* 10 */ { type: "content", render: () => `
+
+  /* 11 */ { type: "quiz", qid: "q4" },
+
+  /* 12 */ { type: "content", render: () => `
       ${K("TARIX · STANFORD")}
       ${T("Fojiadan <em>Kremniy vodiysigacha</em>")}
       ${timeline([
@@ -709,98 +778,117 @@ const S = [
         ["1939", "HP garaji", "Ikki bitiruvchi — Hyulett va Pakkard — 538 dollar bilan kompaniya ochadi"],
         ["1951", "Sanoat parki", "Universitet yerida texnologiya kompaniyalari uchun park ochiladi"],
         ["1998", "Google", "Ikki aspirant — Larri Peyj va Sergey Brin — qidiruv tizimini kompaniyaga aylantiradi"]])}
+      <div class="card gold a" style="--d:13;margin-top:3vh;display:flex;gap:1.2vw;align-items:center"><div style="font-size:4.4vh">👨‍🏫</div><div><h3 style="margin:0">Frederik Terman — «Kremniy vodiysining otasi»</h3><p>U talabalarini Sharqqa ketib qolmasdan, universitet yonida o‘z kompaniyasini ochishga undagan va professorlarni kompaniyalarga maslahatchi qilgan.</p></div></div>
       ${SRC("Stanford universiteti tarixi")}` },
-  /* 11 */ { type: "content", render: () => `
-      ${K("KREMNIY VODIYSI")}
-      ${T("Frederik Terman — <em>Kremniy vodiysining otasi</em>")}
-      ${SUB("U talabalarini Sharqqa ketib qolmasdan, universitet yonida o‘z kompaniyasini ochishga undagan")}
-      ${cards([
-        { ic: "🧲", h: "Universitet + biznes", p: "Professorlar kompaniyalarga maslahatchi, kompaniyalar esa universitetga hamkor" },
-        { ic: "🌉", h: "Yaqinlik", p: "Laboratoriya, investor va kompaniya bir-biridan bir necha kilometr narida", cls: "gold" }], 2)}
-      ${chips("Stanford bitiruvchilari va olimlari asos solgan kompaniyalar", ["HP", "Cisco", "Google", "Nvidia", "Netflix", "Instagram"], 6)}` },
-  /* 12 */ { type: "content", render: () => `
+
+  /* 13 */ { type: "content", render: () => `
+      ${K("MODEL · STANFORD")}
+      ${T("Stanfordning iqtisodiy modeli")}
+      ${flow([["🎓", "Universitet", "Iste’dodli talaba va olim, yangi g‘oya"], ["🚀", "Startap", "G‘oya asosida yangi kompaniya ochiladi"], ["💸", "Investitsiya", "Venchur fondlar xatarli g‘oyaga pul tikadi"], ["🛒", "Bozor", "Mahsulot dunyo bozoriga chiqadi"]])}
+      <div class="card a" style="--d:11;margin-top:2.6vh"><div class="tag">MISOL · GOOGLE</div><p>Stanford aspirantlari qidiruv algoritmini yaratdi (<b style="color:#fff">universitet</b>) → 1998-yilda Google ochildi (<b style="color:#fff">startap</b>) → 1999-yilda ikki yirik venchur fondi 25 mln $ tikdi (<b style="color:#fff">investitsiya</b>) → bugun dunyo bozori (<b style="color:#fff">bozor</b>). Patent Stanfordniki edi: universitet uni litsenziyaga berib, evaziga aksiya oldi va 2005-yilda 336 mln $ ga sotdi.</p></div>
+      ${KEY("Stanford modelidagi muhim bog‘liqlik: <span>Universitet → Startap → Investitsiya → Bozor</span>.", 13)}
+      ${SRC("Stanford texnologiya litsenziyalash idorasi")}` },
+
+  /* 14 */ { type: "quiz", qid: "q3" },
+
+  /* 15 */ { type: "content", render: () => `
       ${K("RAQAMLARDA · STANFORD")}
       ${T("Stanford ildizli kompaniyalar <em>bitta davlat</em> bo‘lsa...")}
-      ${stats([[39900, "faol kompaniya"], [5.4, "million ish o‘rni", "", " mln"], [2.7, "yillik daromad", "", " trln $"]])}
-      ${TAKE("Bu ham — dunyoning <span>10-yirik iqtisodiyoti</span> darajasi (2011 holatiga).", 7)}
+      ${stats([[39900, "Stanfordga bog‘liq faol kompaniya"], [5.4, "million ish o‘rni", "", " mln"], [2.7, "shu kompaniyalarning yillik daromadi", "", " trln $"]])}
+      <div class="cards" style="grid-template-columns:1fr 1fr;margin-top:2.6vh">
+        <div class="card a" style="--d:7"><div class="tag">KIMLAR?</div><p>HP, Cisco, Google, Nvidia, Netflix, Instagram — Stanford bitiruvchilari va olimlari asos solgan kompaniyalar. Bu ham dunyoning <b style="color:var(--gold)">10-yirik iqtisodiyoti</b> darajasi.</p></div>
+        <div class="card red a" style="--d:8"><div class="tag" style="color:var(--red)">ADASHMANG</div><p>2,7 trln $ — universitetning aktivi ham, byudjeti ham, tadqiqot xarajati ham <b style="color:#fff">emas</b>. Stanford fondi — 40,8 mlrd $.</p></div></div>
+      ${KEY("2,7 trillion dollar — <span>Stanfordga bog‘liq kompaniyalar miqyosi</span> (ularning yillik daromadi).", 10)}
       ${SRC("Isli va Miller — «Stanfordning innovatsiya va tadbirkorlik orqali iqtisodiy ta’siri», 2012")}` },
-  /* 13 */ { type: "quiz", qid: "q5" },
-  /* 14 */ { type: "content", render: () => `
-      ${K("MISOL · TEXNOLOGIYA TRANSFERI")}
-      ${T("Stanford Google’dan qanday <em>foyda</em> ko‘rdi?")}
-      ${flow([["🧪", "Algoritm", "Aspirantlar universitetda qidiruv algoritmini yaratadi"], ["📜", "Patent", "Patent Stanfordga tegishli bo‘ladi"], ["🤝", "Litsenziya", "Universitet uni Google’ga beradi, evaziga aksiya oladi"], ["💰", "336 mln $", "2005-yilda Stanford bu aksiyalarni sotadi"]])}
-      ${TAKE("Universitet <span>qoidasi</span> tufayli bitta ixtiro olimga ham, universitetga ham, jamiyatga ham foyda keltirdi.", 11)}
-      ${SRC("Stanford texnologiya litsenziyalash idorasi")}` },
-  /* 15 */ { type: "quiz", qid: "q3" },
-  /* 16 */ { type: "content", render: () => `
-      ${K("YALE · PUL QANDAY ISHLAYDI")}
-      ${T("«Yale modeli»: <em>jamg‘arma</em> ham innovatsiyaga ishlaydi")}
-      ${cards([
-        { ic: "👤", h: "Devid Svensen", p: "1985–2021-yillarda Yale jamg‘armasini boshqargan" },
-        { ic: "🧩", h: "Yangi yondashuv", p: "Faqat aksiya va obligatsiya emas: xususiy kapital, venchur fondlar, ko‘chmas mulk", cls: "gold" },
-        { ic: "🌍", h: "Ergashuvchilar", p: "Dunyodagi ko‘plab universitet va fondlar bu modelni o‘zlashtirdi" }], 3)}
-      ${TAKE("Yale kabi jamg‘armalar <span>venchur fondlarga</span> pul tikadi, ular esa startaplarni moliyalaydi — ekotizim shu tarzda bog‘lanadi.", 7)}
-      ${SRC("Yale investitsiya idorasi; Yale jamg‘armasi 2025 yilda — 44,1 mlrd $")}` },
+
+  /* 16 */ { type: "quiz", qid: "q5" },
+
   /* 17 */ { type: "content", render: () => `
-      ${K("YALE · QOIDALARNI YOZADIGANLAR")}
-      ${T("Yale — <em>institutlarni</em> yaratadiganlar maktabi")}
-      ${cards([
-        { ic: "🏛️", h: "5 ta AQSh prezidenti", p: "Taft, Ford, Bush (ota), Klinton va Bush (o‘g‘il) Yale’da o‘qigan" },
-        { ic: "⚖️", h: "Yale huquq maktabi", p: "AQShning eng nufuzli huquq maktablaridan biri: sudyalar va qonunchilar maktabi", cls: "gold" },
-        { ic: "🏅", h: "Iqtisodiyot bo‘yicha Nobel", p: "Jeyms Tobin (1981), Robert Shiller (2013), Uilyam Nordxaus (2018)" }], 3)}
-      ${TAKE("MIT va Stanford <span>texnologiya</span> yaratsa, Yale ko‘pincha <span>qoida va siyosat</span> yaratadiganlarni tayyorlaydi.", 7)}` },
-  /* 18 */ { type: "quiz", qid: "q1" },
-  /* 19 */ { type: "content", render: () => `
-      ${K("QOIDA O‘ZGARDI · 1980")}
-      ${T("Bitta qonun — <em>minglab startaplar</em>")}
-      ${cards([
-        { ic: "🔒", h: "Avval", p: "Davlat pulidan qilingan ixtiro patenti davlatga qolardi. Davlat qo‘lidagi ≈28 ming patentning 5 foizdan kamrog‘i litsenziyalangan.", cls: "red" },
-        { ic: "🔓", h: "Bayh–Dole qonunidan keyin", p: "Patent universitetga qoladi → universitetlar texnologiya transferi idoralarini ochdi → ixtirolar kompaniyalarga o‘ta boshladi." }], 2)}
-      ${TAKE("Pul o‘zgarmadi — <span>qoida</span> o‘zgardi. Bu institutsional iqtisodiyotning eng yorqin misollaridan biri.")}
+      ${K("YALE · PUL VA QOIDALAR")}
+      ${T("Yale iqtisodiyotga <em>boshqacha</em> ta’sir qiladi")}
+      <div class="cards" style="grid-template-columns:1fr 1fr">
+        <div class="card gold a" style="--d:3"><div class="ic">💼</div><h3>«Yale modeli» — pulni boshqarish</h3>
+          <p>Devid Svensen 1985–2021-yillarda jamg‘armani boshqargan. U pulni faqat aksiya va obligatsiyaga emas, <b style="color:#fff">xususiy kapital, venchur fondlar va ko‘chmas mulkka</b> ham joylagan.</p>
+          <p style="margin-top:1vh">Dunyodagi ko‘plab universitet va fondlar bu modelni o‘zlashtirdi. Fond: <b style="color:var(--gold)">44,1 mlrd $</b>.</p></div>
+        <div class="card a" style="--d:4"><div class="ic">⚖️</div><h3>Qoidalarni yozadiganlar maktabi</h3>
+          <p>5 ta AQSh prezidenti Yale’da o‘qigan: Taft, Ford, Bush (ota), Klinton, Bush (o‘g‘il).</p>
+          <p style="margin-top:1vh">Yale huquq maktabi — sudyalar va qonunchilar maktabi. Iqtisodiyot bo‘yicha Nobel: Jeyms Tobin (1981), Robert Shiller (2013), Uilyam Nordxaus (2018).</p></div></div>
+      ${KEY("Yale jamg‘armasi <span>venchur fondlar</span> orqali startaplarga pul yetkazadi, bitiruvchilari esa <span>qonun va siyosat</span> — ya’ni institutlarni yaratadi.", 7)}
+      ${SRC("Yale investitsiya idorasi, 2025")}` },
+
+  /* 18 */ { type: "content", render: () => `
+      ${K("TEXNOLOGIYA TRANSFERI")}
+      ${T("Bilim qanday qilib <em>pulga</em> aylanadi?")}
+      ${flow([["🧪", "Ixtiro", "Olim laboratoriyada yangi narsa topadi"], ["📜", "Patent", "Ixtiro huquqiy himoyaga olinadi"], ["🤝", "Litsenziya", "Kompaniya undan foydalanish huquqini oladi"], ["🏭", "Mahsulot", "Bozorga chiqadi, daromad keltiradi"]])}
+      <div class="cards" style="grid-template-columns:1fr 1fr;margin-top:2.4vh">
+        <div class="card red a" style="--d:11"><div class="tag" style="color:var(--red)">1980-YILGACHA</div><p>Davlat pulidan qilingan ixtiro patenti davlatga qolardi. Davlat qo‘lidagi ≈28 ming patentning <b style="color:#fff">5 foizdan kamrog‘i</b> ishlatilgan — bilim tokchada qolgan.</p></div>
+        <div class="card a" style="--d:12"><div class="tag">BAYH–DOLE QONUNI (1980)</div><p>Patent universitetga qoladi → har bir universitet <b style="color:#fff">texnologiya transferi idorasi</b>ni ochdi → ixtirolar kompaniyalarga o‘ta boshladi. Pul o‘zgarmadi — qoida o‘zgardi.</p></div></div>
+      ${KEY("Olimlar kuchli bo‘lsa-yu, texnologiya transferi tizimi bo‘lmasa — <span>ilmiy bilimni iqtisodiy qiymatga aylantirish qiyinlashadi</span>.", 13)}
       ${SRC("AQSh Bayh–Dole qonuni (1980); AQSh Hisob palatasi")}` },
+
+  /* 19 */ { type: "quiz", qid: "q7" },
+
   /* 20 */ { type: "content", render: () => `
-      ${K("EKOTIZIM")}
-      ${T("Muvaffaqiyat — bitta universitet emas, <em>butun tizim</em>")}
-      ${flow([["🎓", "Universitet", "Iste’dod va bilim"], ["🔬", "Tadqiqot", "Yangi g‘oya"], ["🚀", "Startap", "G‘oya — mahsulotga"], ["💸", "Investitsiya", "Venchur kapital"], ["🛒", "Bozor", "Mijoz va daromad"]])}
-      <div class="kick a" style="--d:13;margin-top:3.6vh">Ularni ushlab turuvchi institutlar</div>
-      <div class="chips">${["⚖️ Mulk va patent huquqi", "🏛️ Mustaqil sud va shartnoma", "🌐 Iste’dodlar uchun ochiq eshik", "🏦 Kapital bozori"].map((c, i) => `<span class="chip a" style="--d:${14 + i * .6}">${c}</span>`).join("")}</div>` },
-  /* 21 */ { type: "quiz", qid: "q9" },
-  /* 22 */ { type: "quiz", qid: "q6" },
-  /* 23 */ { type: "quiz", qid: "q7" },
-  /* 24 */ { type: "gameintro" },
-  /* 25 */ { type: "vote", vote: "country" },
-  /* 26 */ { type: "vote", vote: "inst" },
-  /* 27 */ { type: "reveal", g: 0 },
-  /* 28 */ { type: "reveal", g: 1 },
-  /* 29 */ { type: "reveal", g: 2 },
-  /* 30 */ { type: "content", render: () => `
-      ${K("O‘YIN XULOSASI")}
-      ${T("Davlatlarni <em>pul emas, qoidalar</em> boyitadi")}
-      ${cards([
-        { ic: "✅", h: "Inkluziv institutlar", p: "Mulk himoyasi, ochiq bozor, mustaqil sud — har kim o‘z mehnati va g‘oyasidan foyda ko‘radi" },
-        { ic: "⛔", h: "Ekstraktiv institutlar", p: "Boylik va hokimiyat tor guruh qo‘lida — qolganlar uchun harakat qilishning ma’nosi qolmaydi", cls: "red" }], 2)}
-      ${TAKE("Asemo‘g‘lu, Jonson va Robinson bu g‘oya uchun 2024-yilda <span>Nobel mukofoti</span>ni olishdi. Ulardan ikkitasi — Asemo‘g‘lu va Jonson — <span>MIT</span> professorlari.")}` },
-  /* 31 */ { type: "content", render: () => `
+      ${K("INNOVATSION EKOTIZIM")}
+      ${T("Muvaffaqiyat formulasi: <em>to‘rt bo‘g‘in</em>")}
+      ${flow([["🎓", "Universitet", "Iste’dod va ta’lim"], ["🔬", "Tadqiqot", "Yangi bilim va ixtiro"], ["🚀", "Startap", "G‘oyani mahsulotga aylantiradi"], ["💸", "Investitsiya", "Venchur kapital xatarni ko‘taradi"]])}
+      <div class="kick a" style="--d:11;margin-top:3vh">Bo‘g‘inlarni ushlab turuvchi institutlar</div>
+      <div class="chips">${["⚖️ Mulk va patent huquqi", "🏛️ Mustaqil sud va shartnoma", "🌐 Iste’dodlar uchun ochiq eshik", "🏦 Kapital bozori", "🤝 Universitet–biznes ishonchi"].map((c, i) => `<span class="chip a" style="--d:${12 + i * .5}">${c}</span>`).join("")}</div>
+      ${KEY("Stanfordga o‘xshash innovatsion ekotizim uchun: <span>Universitet + Tadqiqot + Startap + Investitsiya</span>. Imtihon, soliq yoki reklama bu formulaning asosi emas.", 15)}` },
+
+  /* 21 */ { type: "content", render: () => `
+      ${K("NEGA NUSXA KO‘CHIRIB BO‘LMAYDI?")}
+      ${T("MITning binosini qurish mumkin, <em>ekotizimini</em> — yo‘q")}
+      <div class="cards" style="grid-template-columns:1fr 1fr">
+        <div class="card a" style="--d:3"><div class="tag">✓ KO‘CHIRSA BO‘LADI</div><p>🏗️ Bino va kampus</p><p>🧪 Laboratoriya uskunalari</p><p>📚 O‘quv dasturi va darsliklar</p><p>💰 Hatto pul ham</p></div>
+        <div class="card red a" style="--d:4"><div class="tag" style="color:var(--red)">✗ KO‘CHIRIB BO‘LMAYDI</div><p>⚖️ Mustaqil sud va mulk huquqiga ishonch</p><p>💸 Rivojlangan venchur kapital bozori</p><p>🤝 Universitet, biznes va davlat o‘rtasidagi ishonch</p><p>🌐 Bitiruvchilar va investorlar tarmog‘i</p><p>🔁 Xatoga yo‘l beradigan tadbirkorlik madaniyati</p></div></div>
+      ${KEY("Boshqa universitet MIT modelini shunchaki ko‘chirib, ayni natijaga erisha olmaydi, chunki <span>natija butun institutsional ekotizimga bog‘liq</span>.", 7)}` },
+
+  /* 22 */ { type: "quiz", qid: "q9" },
+  /* 23 */ { type: "quiz", qid: "q6" },
+
+  /* 24 */ { type: "content", render: () => `
       ${K("O‘ZBEKISTON UCHUN SABOQ")}
       ${T("Laboratoriya qurish — <em>yo‘lning yarmi</em>")}
+      <div class="cards" style="grid-template-columns:1fr 1.2fr">
+        <div class="card red a" style="--d:3"><div class="tag" style="color:var(--red)">VAZIYAT</div>
+          <p>✅ Zamonaviy laboratoriya qurildi</p><p>✅ Olimlar bor</p><p>❌ Investor yo‘q</p><p>❌ Startap tizimi yo‘q</p>
+          <p style="margin-top:1.2vh;color:#fff"><b>Natija:</b> ilmiy ishlar maqola bo‘lib qoladi, mahsulotga aylanmaydi.</p></div>
+        <div class="card gold a" style="--d:4"><div class="tag">NIMA KERAK?</div>
+          <p>🔁 <b style="color:#fff">Texnologiya transferi idoralari</b> — ixtironi patent va litsenziyaga aylantirish</p>
+          <p>💸 <b style="color:#fff">Venchur moliya</b> — istiqbolli g‘oyaga pul tikadigan investorlar</p>
+          <p>⚖️ <b style="color:#fff">Mulk va patent himoyasi</b> — olim o‘z ixtirosidan foyda ko‘rishiga ishonch</p>
+          <p>🤝 <b style="color:#fff">Universitet–biznes ko‘prigi</b> — professor maslahatchi, talaba amaliyotchi</p>
+          <p>🧭 <b style="color:#fff">Barqaror qoidalar</b> — investor 10 yil oldinni ko‘ra olishi</p></div></div>
+      ${KEY("Investor va startap tizimi bo‘lmasa, <span>ilmiy natijalar tijoratlashmasdan qolishi mumkin</span>. Foyda o‘z-o‘zidan kelmaydi.", 7)}` },
+
+  /* 25 */ { type: "quiz", qid: "q8" },
+
+  /* 26 */ { type: "content", render: () => `
+      ${K("ASOSIY XULOSA")}
+      ${T("Kapitaldan ko‘ra <em>institutlar va bog‘lanishlar</em> ham muhim")}
       ${cards([
-        { ic: "🔁", h: "Texnologiya transferi", p: "Ixtironi patent va litsenziyaga aylantiradigan idoralar" },
-        { ic: "💸", h: "Venchur moliya", p: "Xatarli, lekin istiqbolli g‘oyaga pul tikadigan investorlar", cls: "gold" },
-        { ic: "⚖️", h: "Mulk va patent himoyasi", p: "Olim o‘z ixtirosidan foyda ko‘rishiga ishonch" },
-        { ic: "🤝", h: "Universitet — biznes ko‘prigi", p: "Professor kompaniyaga maslahatchi, talaba — amaliyotchi", cls: "gold" },
-        { ic: "🌐", h: "Ochiqlik", p: "Xalqaro hamkorlik va iste’dodlar almashinuvi" },
-        { ic: "🧭", h: "Barqaror qoidalar", p: "Investor 10 yil oldinni ko‘ra olishi kerak", cls: "gold" }], 3)}
-      ${TAKE("Kapital uskunani sotib oladi, <span>institutlar</span> esa undan natija chiqaradi.", 10)}` },
-  /* 32 */ { type: "quiz", qid: "q8" },
-  /* 33 */ { type: "quiz", qid: "q10" },
+        { ic: "💰", h: "Kapital", p: "Pul, bino, uskuna. Zarur, lekin yetarli emas: qoidalar va ishonch bo‘lmasa, eng qimmat laboratoriya ham bo‘sh turadi." },
+        { ic: "⚖️", h: "Institutlar", p: "Mulk huquqi, patent, mustaqil sud, barqaror qoidalar. Bular odamlarga ixtiro qilish va pul tikish uchun ishonch beradi.", cls: "gold" },
+        { ic: "🔗", h: "Bog‘lanishlar", p: "Universitet, olim, startap, investor va davlat o‘rtasidagi aloqa. Bilim aynan shu zanjir orqali boylikka aylanadi." }], 3)}
+      ${KEY("Institutsional iqtisodiyot xulosasi: <span>kapitaldan ko‘ra institutlar va bog‘lanishlar ham muhim</span>. Asemo‘g‘lu, Jonson va Robinson bu g‘oya uchun 2024-yilda Nobel mukofotini olishdi (ikkisi — MIT professorlari).", 7)}` },
+
+  /* 27 */ { type: "quiz", qid: "q10" },
+  /* 28 */ { type: "gameintro" },
+  /* 29 */ { type: "vote", vote: "country" },
+  /* 30 */ { type: "vote", vote: "inst" },
+  /* 31 */ { type: "reveal", g: 0 },
+  /* 32 */ { type: "reveal", g: 1 },
+  /* 33 */ { type: "reveal", g: 2 },
   /* 34 */ { type: "results" },
   /* 35 */ { type: "content", thanks: true, render: () => `<div class="center">
       ${K("MIT · YALE · STANFORD · TIIAME")}
       <div class="big grad a" style="--d:1;font-size:10vh;padding:.5vh 0">E’tiboringiz uchun rahmat!</div>
       <div class="a" style="--d:3;width:7vw;height:3px;background:var(--gold);margin:3vh auto"></div>
-      <div class="sub a" style="--d:4;color:#fff;font-size:3vh;max-width:62vw;line-height:1.4">Bugun bilim, qoida va ishonch qanday qilib <span style="color:var(--gold)">boylikka</span> aylanishini ko‘rdik.</div>
+      <div class="sub a" style="--d:4;color:#fff;font-size:3vh;max-width:62vw;line-height:1.4">Bilim — <span style="color:var(--gold)">qoidalar</span> va <span style="color:var(--teal)">bog‘lanishlar</span> bo‘lgandagina boylikka aylanadi.</div>
       <div class="sub a" style="--d:7;font-size:2.4vh;margin-top:3vh">Taqdimotchi: <b style="color:#fff">${PRESENTER}</b></div></div>` }
 ];
+
 const TOTAL = S.length;
 
 /* ===================================================================
@@ -1100,7 +1188,7 @@ function host() {
       (function f(t) { const k = Math.min(1, Math.max(0, (t - t0) / 1600)); const e = 1 - Math.pow(1 - k, 3); const v = to * e;
         n.textContent = pre + (dec ? v.toFixed(1).replace(".", ",") : Math.round(v).toLocaleString("ru-RU").replace(/,/g, " ")) + suf; if (k < 1) requestAnimationFrame(f); })(performance.now());
     });
-    if (!sameSlide && (s.type === "content" || s.type === "gameintro")) sfx("whoosh");
+    if (!sameSlide) sfx("slide");
     if (s.type === "quiz" && st.phase === "reveal") { /* ovoz closeQuiz'da */ }
     if (s.type === "reveal" && st.phase === "warp") {
       const d = revealData(s.g); if (!d) return; sfx("warp");
@@ -1110,7 +1198,7 @@ function host() {
     }
     if (s.type === "reveal" && st.phase === "show") { const d = revealData(s.g); if (d) { if (d.cs.good) { sfx("fanfare"); confetti(140); } else sfx("no"); } }
     if (s.type === "results") {
-      if (st.phase === "board") { setTimeout(() => el.querySelectorAll(".fi").forEach(f => f.style.width = f.dataset.w + "%"), 300); sfx("whoosh"); }
+      if (st.phase === "board") { setTimeout(() => el.querySelectorAll(".fi").forEach(f => f.style.width = f.dataset.w + "%"), 300); }
       if (st.phase === "drum") { sfx("drum", 3.2); autoT = setTimeout(() => { if (S[st.slide].type === "results" && st.phase === "drum") next(); }, 3400); }
       if (st.phase === "win") { sfx("hit"); setTimeout(() => sfx("fanfare"), 250); confetti(320); setTimeout(() => confetti(200), 1500); music("finalMusic", true, 0.6); }
     }
@@ -1142,38 +1230,68 @@ function host() {
   }
 
   /* ---------------- INTRO («video») ---------------- */
-  let introT = [], beatT = null, grainRaf = 0;
+  let introT = [], beatT = null, grainRaf = 0, ecgRaf = 0, ecgQ = [], ecgTarget = { y: .5, a: 1 };
+  const ART = {
+    yale: "M10 190H290 M40 190V118H260V190 M112 118V44H188V118 M112 44L120 30L128 44L136 30L144 44L152 30L160 44L168 30L176 44L184 30L188 44 M136 118V92Q150 70 164 92V118 M62 178V150Q77 128 92 150V178Z M208 178V150Q223 128 238 150V178Z M128 70H172 M128 58H172",
+    mit: "M10 190H290 M30 190V112H270V190 M30 112L150 92L270 112 M90 100Q150 18 210 100 M105 92Q150 40 195 92 M150 30V22 M52 112V182 M80 112V182 M108 112V182 M136 112V182 M164 112V182 M192 112V182 M220 112V182 M248 112V182 M30 182H270",
+    stan: "M10 190H290 M50 190V150H250V190 M118 150V52H182V150 M118 52Q150 18 182 52 M150 35V20 M136 72H164V100H136Z M136 112H164V138H136Z M70 168H230 M70 158H100 M200 158H230 M118 52H182"
+  };
+  const art = k => `<svg class="art" viewBox="0 0 300 200" fill="none" stroke="#f7c948" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path class="dr" pathLength="1" d="${ART[k]}"/></svg>`;
   function startIntro() {
     music("bgm", false); if ($("#intro")) return;
-    const box = document.createElement("div"); box.id = "intro"; box.innerHTML = `<canvas id="grain"></canvas><div class="bars"></div><div id="iscene"></div><div class="flash" id="iflash"></div><button class="skip" id="iskip">O‘tkazib yuborish ▶▶</button>`;
+    const box = document.createElement("div"); box.id = "intro";
+    box.innerHTML = `<canvas id="grain"></canvas><canvas id="ecg"></canvas><div class="bars"></div><div id="iscene"></div><div class="flash" id="iflash"></div><button class="skip" id="iskip">O‘tkazib yuborish ▶▶</button>`;
     document.body.appendChild(box); $("#iskip").onclick = endIntro;
     music("introMusic", true, 0.7);
     // donador kino teksturasi
-    const cv = $("#grain"), cx = cv.getContext("2d"); cv.width = 320; cv.height = 180;
-    (function g() { const im = cx.createImageData(320, 180); for (let i = 0; i < im.data.length; i += 4) { const v = Math.random() * 38; im.data[i] = v * 1.1; im.data[i + 1] = v * .8; im.data[i + 2] = v * .6; im.data[i + 3] = 255; } cx.putImageData(im, 0, 0);
-      const gr = cx.createRadialGradient(160, 90, 20, 160, 90, 190); gr.addColorStop(0, "rgba(90,35,10,.25)"); gr.addColorStop(1, "rgba(0,0,0,.9)"); cx.fillStyle = gr; cx.fillRect(0, 0, 320, 180); grainRaf = requestAnimationFrame(g); })();
-    let rate = 1300;
-    function beatLoop() { sfx("beat"); beatT = setTimeout(beatLoop, rate); }
-    const sc = (html) => { const el = $("#iscene"); if (!el) return; const old = el.firstElementChild; if (old) { old.classList.add("out"); old.querySelectorAll("*").forEach(x => x.classList.add("out")); }
-      setTimeout(() => { if ($("#iscene")) $("#iscene").innerHTML = `<div class="scene">${html}</div>`; }, old ? 700 : 0); };
+    const cv = $("#grain"), cx = cv.getContext("2d"); cv.width = 320; cv.height = 180; let pulse = 0;
+    (function g() { const im = cx.createImageData(320, 180); for (let i = 0; i < im.data.length; i += 4) { const v = Math.random() * 34; im.data[i] = v * 1.1; im.data[i + 1] = v * .8; im.data[i + 2] = v * .6; im.data[i + 3] = 255; } cx.putImageData(im, 0, 0);
+      pulse *= 0.93; const gr = cx.createRadialGradient(160, 90, 20, 160, 90, 190); gr.addColorStop(0, `rgba(${90 + 80 * pulse},${30 + 10 * pulse},${12},${.25 + .2 * pulse})`); gr.addColorStop(1, "rgba(0,0,0,.92)"); cx.fillStyle = gr; cx.fillRect(0, 0, 320, 180); grainRaf = requestAnimationFrame(g); })();
+    // EKG chizig'i
+    const ec = $("#ecg"), ex = ec.getContext("2d"); const dpr = Math.min(2, devicePixelRatio || 1);
+    ec.width = innerWidth * dpr; ec.height = innerHeight * dpr; const W = ec.width, H = ec.height; const buf = new Array(Math.ceil(W / (3 * dpr))).fill(0); let ey = .5, ea = 1;
+    const WAVE = [0, -.06, -.1, -.06, 0, 0, .1, -1, .5, 0, 0, 0, -.12, -.2, -.24, -.2, -.12, 0];
+    (function e() { for (let k = 0; k < 2; k++) { buf.shift(); buf.push(ecgQ.length ? ecgQ.shift() : (Math.random() - .5) * .015); }
+      ey += (ecgTarget.y - ey) * .03; ea += (ecgTarget.a - ea) * .03;
+      ex.clearRect(0, 0, W, H); const y0 = H * ey, amp = H * .13 * (ey > .7 ? .55 : 1), step = W / buf.length;
+      ex.lineWidth = 2.5 * dpr; ex.strokeStyle = `rgba(255,77,109,${ea})`; ex.shadowColor = "rgba(255,77,109,.9)"; ex.shadowBlur = 14 * dpr; ex.beginPath();
+      buf.forEach((v, i) => { const x = i * step, y = y0 + v * amp; i ? ex.lineTo(x, y) : ex.moveTo(x, y); }); ex.stroke();
+      const hx = W - step, hy = y0 + buf[buf.length - 1] * amp; ex.fillStyle = `rgba(255,255,255,${ea})`; ex.beginPath(); ex.arc(hx, hy, 3.5 * dpr, 0, 7); ex.fill();
+      ecgRaf = requestAnimationFrame(e); })();
+    let rate = 1000;
+    function beatLoop() { sfx("beat"); pulse = 1; ecgQ.push(...WAVE.flatMap(v => [v, v])); beatT = setTimeout(beatLoop, rate); }
+    const sc = (html) => { const el = $("#iscene"); if (!el) return; const old = el.firstElementChild; if (old) old.classList.add("out");
+      setTimeout(() => { if ($("#iscene")) $("#iscene").innerHTML = `<div class="scene">${html}</div>`; }, old ? 750 : 0); };
     const typeIn = (sel, txt, sp) => { let i = 0; const go = () => { const e = $(sel); if (!e) return; e.textContent = txt.slice(0, ++i); sfx("type"); if (i < txt.length) introT.push(setTimeout(go, sp)); }; go(); };
     const at = (ms, fn) => introT.push(setTimeout(fn, ms));
-    at(0, () => { beatLoop(); sc(`<div class="l1">HAQIQIY TARIX ASOSIDA</div><div class="l2">Uchta universitet. Uch asr. Bitta savol.</div>`); });
-    at(4500, () => { sfx("whoosh"); sc(`<div class="yr">1701</div><div class="pl">KONNEKTIKUT</div><div class="tx">Bir guruh ruhoniylar kichik kollej ochadi.<br>Keyinchalik u <b style="color:#f7c948">Yale</b> nomini oladi.</div>`); });
-    at(10500, () => { sfx("whoosh"); rate = 1100; sc(`<div class="yr">1861</div><div class="pl">MASSACHUSETS</div><div class="tx">Uilyam Barton Rojers yangi turdagi institut uchun nizom oladi:<br>fan va amaliyot — bir joyda. Bu — <b style="color:#f7c948">MIT</b>.</div>`); });
-    at(16500, () => { sfx("whoosh"); rate = 950; sc(`<div class="yr">1885</div><div class="pl">KALIFORNIYA</div><div class="tx">15 yoshli o‘g‘lidan ayrilgan ota-ona<br>boshqa yoshlar uchun universitet qurishga ahd qiladi: <b style="color:#f7c948">Stanford</b>.</div>`); });
-    at(22500, () => { sfx("whoosh"); rate = 780; sc(`<div class="l2" style="font-size:2.8vh;color:#ddd;animation-delay:0s">Bugun ular bilan bog‘liq kompaniyalarning yillik daromadi:</div>
-        <div style="display:flex;gap:8vw;margin-top:5vh"><div><div class="money" id="m1">0</div><div class="ml">MIT bitiruvchilari kompaniyalari</div></div><div><div class="money" id="m2" style="color:#f7c948">0</div><div class="ml">Stanfordga bog‘liq kompaniyalar</div></div></div>`);
-      const t0 = performance.now() + 900; (function f(t) { const k = Math.min(1, Math.max(0, (t - t0) / 2600)); const e = 1 - Math.pow(1 - k, 3); const a = $("#m1"), b = $("#m2"); if (!a) return;
-        a.textContent = (1.9 * e).toFixed(1).replace(".", ",") + " trln $"; b.textContent = (2.7 * e).toFixed(1).replace(".", ",") + " trln $"; if (k < 1) requestAnimationFrame(f); })(performance.now()); sfx("riser", 3.4); });
-    at(29500, () => { rate = 640; sc(`<div class="tx" style="font-size:4.2vh;max-width:70vw;animation-delay:.2s">Har biri alohida davlat bo‘lganida —<br><b style="color:#3ee6c4">dunyoning 10-yirik iqtisodiyoti</b> bo‘lardi.</div>`); });
-    at(34500, () => { rate = 520; sc(`<div class="l1" style="font-size:6vh;letter-spacing:.3em"><span id="qq"></span></div>`); setTimeout(() => typeIn("#qq", "QANDAY QILIB?", 120), 800); });
-    at(38200, () => { clearTimeout(beatT); beatT = null; });
-    at(39200, () => { sfx("hit"); const f = $("#iflash"); if (f) f.classList.add("on"); sc(`<div class="ttl grad">MIT · YALE · STANFORD</div><div class="l2" style="font-size:3.2vh;color:#eee">va ularning dunyo iqtisodiyotiga ta’siri</div><div class="pl" style="margin-top:4vh;animation-delay:1.4s">TAQDIMOTCHI: ${PRESENTER.toUpperCase()}</div>`); });
-    at(46500, endIntro);
+    const yearScene = (k, y, place, txt) => `<div class="irow"><div class="artw">${art(k)}</div><div class="itxt"><div class="yr">${y}</div><div class="pl">${place}</div><div class="tx">${txt}</div></div></div>`;
+
+    at(0, () => { beatLoop(); });
+    at(3400, () => { ecgTarget = { y: .86, a: .45 }; sfx("swell"); sc(`<div class="l1">HAQIQIY TARIX ASOSIDA</div><div class="l2">Uchta universitet. Uch asr. Bitta savol.</div>`); });
+    at(8400, () => { sfx("swell"); sc(yearScene("yale", "1701", "KONNEKTIKUT", `Bir guruh ruhoniylar kichik kollej ochadi.<br>Keyinchalik u <b>Yale</b> nomini oladi va qonun hamda siyosat yaratuvchilar maktabiga aylanadi.`)); });
+    at(15000, () => { sfx("swell"); rate = 900; sc(yearScene("mit", "1861", "MASSACHUSETS", `Uilyam Barton Rojers yangi turdagi institut ochadi:<br>fan va amaliyot — bir joyda. Bu — <b>MIT</b>.`)); });
+    at(21600, () => { sfx("swell"); rate = 820; sc(yearScene("stan", "1885", "KALIFORNIYA", `15 yoshli o‘g‘lidan ayrilgan ota-ona boshqa yoshlar uchun universitet qurishga ahd qiladi: <b>Stanford</b>.`)); });
+    at(28200, () => { sfx("swell"); rate = 750;
+      const ch = ["🎓 Universitet", "🔬 Tadqiqot", "🚀 Startap", "💸 Investitsiya", "🛒 Bozor"];
+      sc(`<div class="tx" style="margin:0 0 5vh;font-size:3.6vh">Ular bitta ishni qildi: <b>bilimni biznes bilan bog‘ladi</b></div>
+        <div class="chain">${ch.map((c, i) => `${i ? `<span class="ca" style="animation-delay:${1.6 + i * .75 - .3}s">→</span>` : ""}<span class="cb" style="animation-delay:${1.6 + i * .75}s">${c}</span>`).join("")}</div>`);
+      ch.forEach((_, i) => at(28200 + 750 + 1600 + i * 750, () => sfx("pop"))); });
+    at(35600, () => { sfx("swell"); rate = 680;
+      sc(`<div class="l2" style="font-size:2.8vh;color:#ddd;animation-delay:0s">Bugun ular bilan bog‘liq kompaniyalarning yillik daromadi:</div>
+        <div style="display:flex;gap:8vw;margin-top:4vh"><div><div class="money" id="m1">0</div><div class="ml">MIT bitiruvchilari kompaniyalari</div></div><div><div class="money" id="m2" style="color:#f7c948">0</div><div class="ml">Stanfordga bog‘liq kompaniyalar</div></div></div>
+        <svg class="chart" viewBox="0 0 600 120"><polyline class="dr" pathLength="1" points="0,115 80,112 160,106 240,98 320,84 400,64 460,44 520,24 600,4" fill="none" stroke="#3ee6c4" stroke-width="3"/></svg>`);
+      const t0 = performance.now() + 1000; (function f(t) { const k = Math.min(1, Math.max(0, (t - t0) / 2800)); const e = 1 - Math.pow(1 - k, 3); const a = $("#m1"), b = $("#m2"); if (!a) return;
+        a.textContent = (1.9 * e).toFixed(1).replace(".", ",") + " trln $"; b.textContent = (2.7 * e).toFixed(1).replace(".", ",") + " trln $"; if (k < 1) requestAnimationFrame(f); })(performance.now()); sfx("riser", 3.6); });
+    at(43000, () => { rate = 600; sfx("swell"); sc(`<div class="tx" style="font-size:4.2vh;max-width:72vw">Har biri alohida davlat bo‘lganida —<br><b style="color:#3ee6c4">dunyoning 10-yirik iqtisodiyoti</b> bo‘lardi.</div>`); });
+    at(48200, () => { rate = 540; sfx("swell"); sc(`<div class="tx" style="font-size:4.6vh">Bu — faqat pul emas.</div><div class="tx" style="font-size:4.6vh;animation-delay:1.8s"><b>Bu — qoidalar, ishonch va bog‘lanishlar.</b></div>`); });
+    at(53600, () => { rate = 460; sc(`<div class="l1" style="font-size:6vh;letter-spacing:.3em"><span id="qq"></span></div>`); setTimeout(() => typeIn("#qq", "QANDAY QILIB?", 120), 800); });
+    at(57600, () => { clearTimeout(beatT); beatT = null; ecgTarget = { y: .86, a: .15 }; });
+    at(58800, () => { sfx("hit"); const f = $("#iflash"); if (f) f.classList.add("on"); ecgTarget = { y: .86, a: 0 };
+      sc(`<div class="ttl grad">MIT · YALE · STANFORD</div><div class="l2" style="font-size:3.2vh;color:#eee">universitetlari va ularning dunyo iqtisodiyotiga ta’siri</div><div class="pl" style="margin-top:4vh;animation-delay:1.4s">TAQDIMOTCHI: ${PRESENTER.toUpperCase()}</div>`); });
+    at(66500, endIntro);
   }
   function endIntro() {
-    introT.forEach(clearTimeout); introT = []; clearTimeout(beatT); cancelAnimationFrame(grainRaf); music("introMusic", false);
+    introT.forEach(clearTimeout); introT = []; clearTimeout(beatT); cancelAnimationFrame(grainRaf); cancelAnimationFrame(ecgRaf); music("introMusic", false);
     const b = $("#intro"); if (b) b.remove(); if (st.slide < 0) go(0);
   }
 }
