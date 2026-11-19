@@ -272,6 +272,13 @@ h1.t{font-size:6.6vh}
 #intro .pbig{position:absolute;inset:0;display:none;align-items:center;justify-content:center;font-size:16vh;color:rgba(255,255,255,.75);z-index:5;pointer-events:none;text-shadow:0 0 40px #000}
 #intro.paused .pbig{display:flex}
 #lobby .mpick{top:7vh;bottom:auto}
+/* QR ekranidagi va telefondagi EKG */
+#lobby .lecg{position:absolute;left:0;top:50%;width:100%;height:24vh;transform:translateY(-62%);z-index:0;opacity:.9;pointer-events:none}
+#lobby .bigqr{position:relative;z-index:1}
+#lobby .snd{position:absolute;top:2vh;left:50%;transform:translateX(-50%);font-family:var(--mono);font-size:1.6vh;color:#ffb3c1;letter-spacing:.08em;animation:pulse 1s infinite alternate}
+.pecg{width:100%;height:90px;display:block;margin:10px 0 4px}
+#player .hbeat{animation:hb 1s infinite}
+@keyframes hb{0%,100%{transform:scale(1)}10%{transform:scale(1.18)}20%{transform:scale(1)}30%{transform:scale(1.1)}}
 
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -651,6 +658,35 @@ function startNet(light) {
 }
 
 /* ------------------------------------------------------------------
+   3b. Yurak urishi + EKG (QR ekrani va telefonlar uchun)
+   ------------------------------------------------------------------ */
+const ECG = { buf: [], q: [], raf: 0, id: null };
+const WAVE = [0, -.06, -.1, -.06, 0, 0, .1, -1, .5, 0, 0, 0, -.12, -.2, -.24, -.2, -.12, 0];
+function ecgRun(id) {
+  ECG.id = id; if (ECG.raf) return;
+  const loop = () => {
+    const cv = document.getElementById(ECG.id);
+    if (cv && cv.clientWidth) {
+      const dpr = Math.min(2, devicePixelRatio || 1), W = cv.clientWidth * dpr, H = cv.clientHeight * dpr;
+      if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
+      const n = Math.max(60, Math.floor(W / (3 * dpr))); while (ECG.buf.length < n) ECG.buf.unshift(0); while (ECG.buf.length > n) ECG.buf.shift();
+      for (let k = 0; k < 2; k++) { ECG.buf.shift(); ECG.buf.push(ECG.q.length ? ECG.q.shift() : (Math.random() - .5) * .02); }
+      const x = cv.getContext("2d"); x.clearRect(0, 0, W, H); const y0 = H * .58, amp = H * .42, stp = W / ECG.buf.length;
+      x.lineWidth = 2.6 * dpr; x.strokeStyle = "rgba(255,77,109,.95)"; x.shadowColor = "rgba(255,77,109,.9)"; x.shadowBlur = 14 * dpr; x.beginPath();
+      ECG.buf.forEach((v, i) => { const X = i * stp, Y = y0 + v * amp; i ? x.lineTo(X, Y) : x.moveTo(X, Y); }); x.stroke();
+      x.fillStyle = "#fff"; x.beginPath(); x.arc(W - stp, y0 + ECG.buf[ECG.buf.length - 1] * amp, 3.5 * dpr, 0, 7); x.fill();
+    }
+    ECG.raf = requestAnimationFrame(loop);
+  };
+  ECG.raf = requestAnimationFrame(loop);
+}
+function ecgStop() { cancelAnimationFrame(ECG.raf); ECG.raf = 0; ECG.q = []; }
+const HEART = { t: null, on: false, rate: 1000, vib: false };
+function heartBeat(v, vib) { sfx("beat", v || 1); ECG.q.push(...WAVE.flatMap(x => [x, x])); if (vib) { try { navigator.vibrate && navigator.vibrate([35, 190, 25]); } catch (e) { } } }
+function heartStart(rate, vib) { HEART.rate = rate || 1000; HEART.vib = !!vib; if (HEART.on) return; HEART.on = true; const b = () => { if (!HEART.on) return; heartBeat(1, HEART.vib); HEART.t = setTimeout(b, HEART.rate); }; b(); }
+function heartStop() { HEART.on = false; clearTimeout(HEART.t); }
+
+/* ------------------------------------------------------------------
    4. Konfetti
    ------------------------------------------------------------------ */
 let confParts = [], confRun = false;
@@ -922,7 +958,9 @@ function host() {
   const app = $("#app");
   app.innerHTML = `
     <div id="lobby">
+      <canvas id="lecg" class="lecg"></canvas>
       <div class="bigqr">${QR}</div>
+      <div class="snd" id="lsnd">🔊 Yurak urishi ovozi uchun ekranga bir marta bosing</div>
       <h2>Skanerlang va qo‘shiling · <span>XONA ${room}</span></h2>
       <div class="url">${esc(joinUrl)}</div>
       <div class="names" id="lnames"></div>
@@ -968,11 +1006,12 @@ function host() {
     else if (e.key === "f" || e.key === "F") fs();
     else if (e.key === "m" || e.key === "M") $("#bmute").click();
   });
-  document.addEventListener("pointerdown", () => { ac(); if (st.slide < 0) music("bgm", true, 0.35); }, { once: true });
+  document.addEventListener("pointerdown", () => { ac(); const h = $("#lsnd"); if (h) h.remove(); }, { once: true });
   function fs() { try { if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); } catch (e) { } }
 
   // --- obunalar ---
-  DB.on(R + "/players", v => { players = v || {}; assignGroups(); onLive(); });
+  let pcount = -1;
+  DB.on(R + "/players", v => { players = v || {}; assignGroups(); const n = plist().length; if (pcount >= 0 && n > pcount && st.slide < 0 && !$("#intro")) heartBeat(1.3); pcount = n; onLive(); });
   DB.on(R + "/scores", v => { scores = v || {}; onLive(); });
   DB.on(R + "/game", v => { game = v || {}; if (needs) render(true); else onLive(); });
   DB.on(R + "/results", v => { results = v || {}; if (needs) render(true); });
@@ -1103,7 +1142,8 @@ function host() {
   // --- chizish ---
   function render(force) {
     const key = st.slide + "|" + st.phase;
-    if (st.slide < 0) { $("#lobby").classList.remove("hidden"); $("#stage").classList.add("hidden"); onLive(); return; }
+    if (st.slide < 0) { $("#lobby").classList.remove("hidden"); $("#stage").classList.add("hidden"); if (!$("#intro")) { ecgRun("lecg"); heartStart(1000); } onLive(); return; }
+    heartStop(); ecgStop();
     $("#lobby").classList.add("hidden"); $("#stage").classList.remove("hidden");
     const s = S[st.slide]; const sameSlide = lastKey.split("|")[0] === String(st.slide);
     if (key === lastKey && !force) { onLive(); return; }
@@ -1298,7 +1338,7 @@ function host() {
   }
 
   function startIntro() {
-    music("bgm", false); if ($("#intro")) return;
+    music("bgm", false); if ($("#intro")) return; heartStop(); ecgStop();
     const box = document.createElement("div"); box.id = "intro";
     box.innerHTML = `<canvas id="grain"></canvas><div class="bars"></div><div id="iscene"></div><div class="flash" id="iflash"></div>
       <div class="ictl"><button class="skip" id="ipause">⏸ Pauza</button><button class="skip" id="iskip">O‘tkazib yuborish ▶▶</button></div><div class="pbig">⏸</div>`;
@@ -1390,14 +1430,21 @@ function player() {
       if ($("#nin")) return;
       app.innerHTML = frame(`<div class="pcard"><div class="big-emoji">👋</div><h2>Xush kelibsiz!</h2><p>Ismingizni kiriting — u ekranda ko‘rinadi</p>
         <input class="pin" id="nin" maxlength="20" placeholder="Ismingiz"><button class="pbtn pgo" id="ngo">Qo‘shilish ▶</button></div>`);
-      const go = () => { const n = $("#nin").value.trim().slice(0, 20); if (!n) return; $("#ngo").disabled = true; DB.set(`${R}/players/${pid}`, { name: n, j: TS() }); };
+      const go = () => { const n = $("#nin").value.trim().slice(0, 20); if (!n) return; ac(); $("#ngo").disabled = true; DB.set(`${R}/players/${pid}`, { name: n, j: TS() }); };
       $("#ngo").onclick = go; $("#nin").onkeydown = e => { if (e.key === "Enter") go(); };
       return;
     }
     const key = JSON.stringify([st, me, myVotes, res && st && S[st.slide] && res[S[st.slide].qid], game, scores[pid]]);
     if (key === lastKey) return; lastKey = key;
     const g = me.group != null ? GROUPS[me.group] : null;
-    if (!st || st.slide < 0) { app.innerHTML = frame(wait("✅", "Siz qo‘shildingiz!", g ? `Guruhingiz: <br><span class="gbadge" style="background:${g.color}">${g.emoji} ${g.name}</span><br><br>Taqdimot boshlanishini kuting` : "Guruh belgilanmoqda…")); return; }
+    if (!st || st.slide < 0) {
+      const on = AC && AC.state === "running";
+      app.innerHTML = frame(`<div class="pcard"><div class="big-emoji hbeat">❤️</div><h2>Siz qo‘shildingiz!</h2><canvas id="pecg" class="pecg"></canvas>
+        <p>${g ? `Guruhingiz: <br><span class="gbadge" style="background:${g.color}">${g.emoji} ${g.name}</span><br><br>` : "Guruh belgilanmoqda…<br><br>"}Taqdimot boshlanishini kuting</p>
+        ${on ? "" : `<button class="pbtn pgo" id="hon">🔊 Yurak urishini yoqish</button>`}</div>`);
+      const hb = $("#hon"); if (hb) hb.onclick = () => { ac(); lastKey = ""; setTimeout(draw, 50); };
+      ecgRun("pecg"); heartStart(1000, true); return; }
+    heartStop(); ecgStop();
     const s = S[st.slide];
     if (s.type === "quiz") return drawQuiz(s);
     if (s.type === "vote") return drawVote(s, g);
