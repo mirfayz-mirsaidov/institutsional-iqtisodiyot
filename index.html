@@ -279,6 +279,17 @@ h1.t{font-size:6.6vh}
 .pecg{width:100%;height:90px;display:block;margin:10px 0 4px}
 #player .hbeat{animation:hb 1s infinite}
 @keyframes hb{0%,100%{transform:scale(1)}10%{transform:scale(1.18)}20%{transform:scale(1)}30%{transform:scale(1.1)}}
+/* g'irrom ogohlantirishi */
+.cheat{position:fixed;left:50%;top:9vh;transform:translateX(-50%);z-index:50;background:linear-gradient(90deg,#b0002a,#ff2d55);color:#fff;border-radius:20px;padding:2.6vh 2.6vw;display:flex;gap:1.6vw;align-items:center;box-shadow:0 0 0 6px rgba(255,45,85,.35),0 20px 80px rgba(255,0,60,.6);animation:cheatin .5s cubic-bezier(.2,.8,.2,1),shake .45s .5s 3}
+.cheat .ci{font-size:9vh} .cheat .ct{font-family:var(--mono);font-size:2.4vh;letter-spacing:.3em;font-weight:700}
+.cheat .cn{font-size:4.6vh;font-weight:800;margin-top:.4vh} .cheat .cp{font-size:2.6vh;margin-top:.6vh;color:#ffe0e6}
+@keyframes cheatin{from{opacity:0;transform:translate(-50%,-30px) scale(.8)}to{opacity:1;transform:translate(-50%,0) scale(1)}}
+@keyframes shake{25%{transform:translate(calc(-50% - 12px),0)}75%{transform:translate(calc(-50% + 12px),0)}}
+body.busted{animation:bustbg .6s infinite alternate}
+@keyframes bustbg{from{background:#3a0010}to{background:#8a0022}}
+body.busted #bgwrap{opacity:.25}
+.pcard.bust{background:rgba(255,30,70,.25);border:2px solid #ff2d55}
+.pcard.bust h2{color:#fff;font-size:26px} .pcard.bust .pts{color:#fff;font-size:56px}
 
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -543,6 +554,7 @@ const HEADER = "TIIAME · INSTITUTSIONAL IQTISODIYOT";
 const PRESENTER = "Mirfayz Mirsaidov";
 const LETTERS = ["A", "B", "C", "D"], SHAPES = ["▲", "◆", "●", "■"];
 const GAME_BONUS = 1500;
+const CHEAT_PENALTY = 500;
 
 /* ------------------------------------------------------------------
    1. Ma'lumotlar bazasi (Firebase yoki sinov uchun lokal)
@@ -616,7 +628,8 @@ const SFX = {
   pop() { const t = ac().currentTime; osc("sine", 660, t, 0.12, 0.12, 990); },
   riser(sec) { const t = ac().currentTime; osc("sine", 110, t, sec, 0.08, 880, sec * 0.6); noise(t, sec, 0.08, "bandpass", 400, 4000, sec * 0.6); },
   hit() { const t = ac().currentTime; osc("sine", 70, t, 2, 1, 30); noise(t, 1.4, 0.35, "lowpass", 2200, 70); osc("sine", 523, t + 0.05, 2.4, 0.08, null, 0.05); osc("sine", 784, t + 0.05, 2.4, 0.06, null, 0.05); },
-  type() { const t = ac().currentTime; osc("sine", 1800 + Math.random() * 400, t, 0.02, 0.025); }
+  type() { const t = ac().currentTime; osc("sine", 1800 + Math.random() * 400, t, 0.02, 0.025); },
+  siren(sec) { const t = ac().currentTime, n = Math.round((sec || 2.4) / 0.3); for (let i = 0; i < n; i++) { const f = i % 2 ? 620 : 980; osc("sawtooth", f, t + i * 0.3, 0.28, 0.32, null, 0.01); osc("square", f * 1.5, t + i * 0.3, 0.28, 0.08, null, 0.01); } }
 };
 function sfx(n, a) { if (muted) return; try { SFX[n](a); } catch (e) { } }
 
@@ -1015,6 +1028,21 @@ function host() {
   DB.on(R + "/scores", v => { scores = v || {}; onLive(); });
   DB.on(R + "/game", v => { game = v || {}; if (needs) render(true); else onLive(); });
   DB.on(R + "/results", v => { results = v || {}; if (needs) render(true); });
+  let seenCheats = null;
+  DB.on(R + "/cheats", async v => {
+    v = v || {}; const keys = []; for (const q in v) for (const pid in (v[q] || {})) keys.push(q + "/" + pid);
+    if (seenCheats === null) { seenCheats = new Set(keys); return; }
+    const fresh = keys.filter(k => !seenCheats.has(k)); fresh.forEach(k => seenCheats.add(k));
+    if (!fresh.length) return;
+    DB.set(R + "/scores", await calcTotals());
+    fresh.forEach((k, i) => setTimeout(() => cheatAlert(k.split("/")[1]), i * 2600));
+  });
+  function cheatAlert(pid) {
+    const p = players[pid]; const nm = p && p.name ? p.name : "Kimdir"; const g = p && p.group != null ? GROUPS[p.group] : null;
+    const el = document.createElement("div"); el.className = "cheat";
+    el.innerHTML = `<div class="ci">🚨</div><div><div class="ct">G‘IRROM O‘YIN!</div><div class="cn"><b>${esc(nm)}</b>${g ? ` <span style="color:${g.color}">(${g.name})</span>` : ""} testdan chiqib ketdi</div><div class="cp">Savoldan chetlashtirildi · −${CHEAT_PENALTY} ball</div></div>`;
+    document.body.appendChild(el); sfx("siren", 2.4); setTimeout(() => el.remove(), 4200);
+  }
   // Sahifa har ochilganda QR va intro (lobbi) bilan boshlanadi; oldingi joy saqlanadi
   let saved = -1;
   DB.get(R + "/state").then(v => {
@@ -1037,7 +1065,7 @@ function host() {
   function initialPhase(s) { return { quiz: "read", vote: "read", reveal: "warp", results: "board" }[s.type] || "show"; }
   function go(i) {
     if (i < 0) i = 0; if (i >= TOTAL) i = TOTAL - 1;
-    const sq = S[i]; if (sq.type === "quiz") { delete results[sq.qid]; DB.update(R, { ["answers/" + sq.qid]: null, ["results/" + sq.qid]: null }); }
+    const sq = S[i]; if (sq.type === "quiz") { delete results[sq.qid]; DB.update(R, { ["answers/" + sq.qid]: null, ["results/" + sq.qid]: null, ["cheats/" + sq.qid]: null }); }
     setState({ slide: i, phase: initialPhase(S[i]), qStart: 0, dur: 0 });
   }
   function prev() { if (Date.now() - lastNav < 500) return; lastNav = Date.now(); if (st.slide > 0) go(st.slide - 1); }
@@ -1063,6 +1091,12 @@ function host() {
     } else if (st.slide < TOTAL - 1) go(st.slide + 1);
   }
 
+  async function calcTotals(all) {
+    all = all || (await DB.get(`${R}/results`)) || {}; const cheats = (await DB.get(`${R}/cheats`)) || {}; const totals = {};
+    for (const qid in all) { const p = (all[qid] && all[qid].pts) || {}; for (const pid in p) totals[pid] = (totals[pid] || 0) + (Number(p[pid]) || 0); }
+    for (const qid in cheats) for (const pid in (cheats[qid] || {})) totals[pid] = (totals[pid] || 0) - CHEAT_PENALTY;
+    return totals;
+  }
   async function closeQuiz() {
     closing = true; const s = S[st.slide]; const q = QUIZ[s.qid];
     try {
@@ -1073,8 +1107,9 @@ function host() {
         if (ai === q.c) { const el = Math.max(0, ((Number(a.t) || st.qStart) - st.qStart) / 1000); pts[pid] = Math.round(1000 - 500 * Math.min(1, el / q.dur)); }
         else pts[pid] = 0;
       }
+      const ch = ((await DB.get(`${R}/cheats/${s.qid}`)) || {}); for (const pid in ch) pts[pid] = 0;  // chetlashtirilganlarga ball yo'q
       const all = (await DB.get(`${R}/results`)) || {}; all[s.qid] = { counts, c: q.c, pts }; results = all;
-      const totals = {}; for (const qid in all) { const p = (all[qid] && all[qid].pts) || {}; for (const pid in p) totals[pid] = (totals[pid] || 0) + (Number(p[pid]) || 0); }
+      const totals = await calcTotals(all);
       st = Object.assign({}, st, { phase: "reveal" });
       await DB.update(R, { ["results/" + s.qid]: all[s.qid], scores: totals, state: st }); sfx("ok"); render();
     } finally { closing = false; }
@@ -1412,6 +1447,14 @@ function player() {
   DB.on(`${R}/scores`, v => { scores = v || {}; draw(); });
   DB.on(`${R}/game`, v => { game = v || {}; draw(); });
   DB.on(`${R}/results`, v => { res = v || {}; draw(); });
+  const myCheat = {};
+  Object.keys(QUIZ).forEach(qid => DB.on(`${R}/cheats/${qid}/${pid}`, v => { if (v) myCheat[qid] = true; else delete myCheat[qid]; lastKey = ""; draw(); }));
+  function onLeave() {
+    if (!st || !me || !me.name) return; const s = S[st.slide]; if (!s || s.type !== "quiz" || !(st.phase === "read" || st.phase === "open")) return;
+    if (myCheat[s.qid]) return; myCheat[s.qid] = true; DB.set(`${R}/cheats/${s.qid}/${pid}`, { t: TS() }); try { sfx("siren", 2); } catch (e) { }
+  }
+  document.addEventListener("visibilitychange", () => { if (document.hidden) onLeave(); else { lastKey = ""; draw(); const s = st && S[st.slide]; if (s && s.type === "quiz" && myCheat[s.qid] && st.phase !== "reveal") { try { ac(); } catch (e) { } sfx("siren", 3); try { navigator.vibrate && navigator.vibrate([400, 150, 400, 150, 600]); } catch (e) { } } } });
+  window.addEventListener("pagehide", onLeave);
   const myDbAns = {};
   Object.keys(QUIZ).forEach(qid => DB.on(`${R}/answers/${qid}/${pid}`, v => { if (v && v.a != null) myDbAns[qid] = Number(v.a); else delete myDbAns[qid]; }));
   DB.on(`${R}/votes/country/${pid}`, v => { myVotes.country = v; draw(); });
@@ -1446,6 +1489,7 @@ function player() {
     heartStop(); ecgStop();
     const s = S[st.slide];
     if (s.type === "quiz") return drawQuiz(s);
+    document.body.classList.remove("busted");
     if (s.type === "vote") return drawVote(s, g);
     if (s.type === "reveal") { const mine = me.group === s.g; app.innerHTML = frame(wait(mine ? "⏳" : "👀", mine ? "Sizning guruhingiz natijasi!" : `${GROUPS[s.g].name} guruh natijasi`, "Ekranga qarang")); return; }
     if (s.type === "results") {
@@ -1460,7 +1504,15 @@ function player() {
 
   function drawQuiz(s) {
     const q = QUIZ[s.qid]; const r = res[s.qid];
-    if (st.phase === "read") delete myAns[s.qid];
+    if (st.phase === "read" && !myCheat[s.qid]) delete myAns[s.qid];
+    if (myCheat[s.qid]) {
+      document.body.classList.add("busted");
+      app.innerHTML = frame(`<div class="pcard bust"><div class="big-emoji">🚨</div><h2>SIZ G‘IRROM O‘YNADINGIZ!</h2>
+        <p style="color:#fff">Test paytida boshqa ilova yoki saytga chiqdingiz.</p><div class="pts">−${CHEAT_PENALTY}</div>
+        <p style="color:#fff"><b>Bu savoldan chetlashtirildingiz.</b><br>Keyingi testda halol o‘ynang!</p></div>`);
+      return;
+    }
+    document.body.classList.remove("busted");
     if (st.phase === "reveal") {
       const a = myAns[s.qid] != null ? myAns[s.qid] : myDbAns[s.qid];
       const p = r && r.pts && r.pts[pid] != null ? Number(r.pts[pid]) : null;
