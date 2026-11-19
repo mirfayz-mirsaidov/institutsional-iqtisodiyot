@@ -262,6 +262,16 @@ h1.t{font-size:6.6vh}
 #intro .bars{z-index:3} #intro .skip{z-index:5} #intro .flash{z-index:4}
 #intro .bars:before,#intro .bars:after{z-index:3}
 #intro .money{font-size:9vh;white-space:nowrap}
+/* musiqa tanlash va intro pauzasi */
+#lobby .mpick{position:absolute;left:2vw;bottom:6vh;font-size:1.6vh;line-height:2.6}
+#lobby .mpick label{display:inline-flex;align-items:center;height:auto;padding:.6vh .9vw;font-size:1.5vh;cursor:pointer}
+#lobby .mnm{margin-left:.8vw;color:var(--mut);font-family:var(--mono);font-size:1.4vh}
+#intro .ictl{position:absolute;right:2vw;bottom:2vh;display:flex;gap:.6vw;z-index:6}
+#intro .ictl .skip{position:static}
+#intro.paused *, #intro.paused *:before, #intro.paused *:after{animation-play-state:paused!important}
+#intro .pbig{position:absolute;inset:0;display:none;align-items:center;justify-content:center;font-size:16vh;color:rgba(255,255,255,.75);z-index:5;pointer-events:none;text-shadow:0 0 40px #000}
+#intro.paused .pbig{display:flex}
+#lobby .mpick{top:7vh;bottom:auto}
 
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -919,6 +929,9 @@ function host() {
       <div class="pl" id="lcount">0 ISHTIROKCHI</div>
       <button class="cbtn" id="lreset" style="position:absolute;left:2vw;top:2vh">↺ Xonani tozalash</button>
       <button class="cbtn hidden" id="lresume" style="position:absolute;right:2vw;bottom:9vh"></button>
+      <div class="mpick"><div class="kick" style="margin:0 0 .8vh">🎵 INTRO MUSIQASI (shu kompyuterdan)</div>
+        <label class="cbtn">1-musiqa · yaralish (sokin)<input type="file" id="m1in" accept="audio/*" hidden></label><span id="m1name" class="mnm">tanlanmagan</span><br>
+        <label class="cbtn">2-musiqa · rivojlanish (shovqinli)<input type="file" id="m2in" accept="audio/*" hidden></label><span id="m2name" class="mnm">tanlanmagan</span></div>
       <button class="pbtn go" id="lgo">▶ INTRONI BOSHLASH</button>
     </div>
     <div id="stage" class="hidden">
@@ -949,7 +962,7 @@ function host() {
   $("#bmute").onclick = () => { setMuted(!muted); $("#bmute").textContent = muted ? "🔇" : "🔊"; };
   $("#bfs").onclick = fs;
   document.addEventListener("keydown", e => {
-    if ($("#intro")) { if (e.key === "Escape" || e.key === "ArrowRight") endIntro(); return; }
+    if ($("#intro")) { if (e.key === "Escape" || e.key === "ArrowRight") endIntro(); else if (e.key === " " || e.key === "p" || e.key === "P") { e.preventDefault(); togglePause(); } return; }
     if (e.key === "ArrowRight" || e.key === " " || e.key === "PageDown" || e.key === "Enter") { e.preventDefault(); if (st.slide < 0) { ac(); startIntro(); } else next(); }
     else if (e.key === "ArrowLeft" || e.key === "PageUp") prev();
     else if (e.key === "f" || e.key === "F") fs();
@@ -1243,70 +1256,79 @@ function host() {
   }
 
   /* ---------------- INTRO («video») ---------------- */
-  let introT = [], beatT = null, grainRaf = 0, ecgRaf = 0, ecgQ = [], ecgTarget = { y: .5, a: 1 };
+  // Musiqa: taqdimotchi kompyuteridan tanlanadi va shu brauzerda saqlanadi (internetga yuklanmaydi)
+  const MUS = { m1: null, m2: null };
+  const idb = () => new Promise((res, rej) => { const r = indexedDB.open("prez_musiqa", 1); r.onupgradeneeded = () => r.result.createObjectStore("f"); r.onsuccess = () => res(r.result); r.onerror = rej; });
+  async function idbPut(k, v) { try { const d = await idb(); d.transaction("f", "readwrite").objectStore("f").put(v, k); } catch (e) { } }
+  async function idbGet(k) { try { const d = await idb(); return await new Promise(r => { const q = d.transaction("f").objectStore("f").get(k); q.onsuccess = () => r(q.result); q.onerror = () => r(null); }); } catch (e) { return null; } }
+  function setMus(k, file) { if (!file) return; if (MUS[k]) URL.revokeObjectURL(MUS[k].url); MUS[k] = { url: URL.createObjectURL(file), name: file.name || "musiqa" }; const l = $("#" + k + "name"); if (l) l.textContent = "✓ " + MUS[k].name; }
+  ["m1", "m2"].forEach(k => { idbGet(k).then(f => { if (f) setMus(k, f); });
+    const inp = $("#" + k + "in"); if (inp) inp.onchange = () => { const f = inp.files[0]; if (f) { setMus(k, f); idbPut(k, f); } }; });
+
+  let iclock = 0, ilast = 0, ipaused = false, iraf = 0, ievents = [], grainRaf = 0;
+  const iaud = { a1: null, a2: null };
   const ART = {
     yale: "M10 190H290 M40 190V118H260V190 M112 118V44H188V118 M112 44L120 30L128 44L136 30L144 44L152 30L160 44L168 30L176 44L184 30L188 44 M136 118V92Q150 70 164 92V118 M62 178V150Q77 128 92 150V178Z M208 178V150Q223 128 238 150V178Z M128 70H172 M128 58H172",
     mit: "M10 190H290 M30 190V112H270V190 M30 112L150 92L270 112 M90 100Q150 18 210 100 M105 92Q150 40 195 92 M150 30V22 M52 112V182 M80 112V182 M108 112V182 M136 112V182 M164 112V182 M192 112V182 M220 112V182 M248 112V182 M30 182H270",
     stan: "M10 190H290 M50 190V150H250V190 M118 150V52H182V150 M118 52Q150 18 182 52 M150 35V20 M136 72H164V100H136Z M136 112H164V138H136Z M70 168H230 M70 158H100 M200 158H230 M118 52H182"
   };
   const art = k => `<svg class="art" viewBox="0 0 300 200" fill="none" stroke="#f7c948" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path class="dr" pathLength="1" d="${ART[k]}"/></svg>`;
+  // intro soati: pauzada to'xtaydi
+  const at = (ms, fn) => ievents.push({ t: iclock + ms, fn });
+  function iloop(now) { if (!ipaused) { iclock += Math.min(100, now - ilast); const due = ievents.filter(e => e.t <= iclock); ievents = ievents.filter(e => e.t > iclock); due.forEach(e => { try { e.fn(); } catch (x) { } }); } ilast = now; iraf = requestAnimationFrame(iloop); }
+  function fade(a, to, ms) { if (!a) return; const from = a.volume, t0 = iclock; (function f() { if (!a) return; const k = Math.min(1, (iclock - t0) / ms); a.volume = Math.max(0, Math.min(1, from + (to - from) * k)) * (muted ? 0 : 1); if (k < 1) requestAnimationFrame(f); else if (to === 0) a.pause(); })(); }
+  function playMus(k, vol) { const m = MUS[k]; if (!m) return null; const a = new Audio(m.url); a.volume = 0; const p = a.play(); if (p) p.catch(() => { }); fade(a, vol, 1500); return a; }
+  function togglePause() {
+    const box = $("#intro"); if (!box) return; ipaused = !ipaused; box.classList.toggle("paused", ipaused);
+    [iaud.a1, iaud.a2].forEach(a => { if (a && !a.ended && a.volume > 0) { if (ipaused) a.pause(); else { const p = a.play(); if (p) p.catch(() => { }); } } });
+    $("#ipause").textContent = ipaused ? "▶ Davom ettirish" : "⏸ Pauza";
+  }
+
   function startIntro() {
     music("bgm", false); if ($("#intro")) return;
     const box = document.createElement("div"); box.id = "intro";
-    box.innerHTML = `<canvas id="grain"></canvas><canvas id="ecg"></canvas><div class="bars"></div><div id="iscene"></div><div class="flash" id="iflash"></div><button class="skip" id="iskip">O‘tkazib yuborish ▶▶</button>`;
-    document.body.appendChild(box); $("#iskip").onclick = endIntro;
-    music("introMusic", true, 0.7);
+    box.innerHTML = `<canvas id="grain"></canvas><div class="bars"></div><div id="iscene"></div><div class="flash" id="iflash"></div>
+      <div class="ictl"><button class="skip" id="ipause">⏸ Pauza</button><button class="skip" id="iskip">O‘tkazib yuborish ▶▶</button></div><div class="pbig">⏸</div>`;
+    document.body.appendChild(box); $("#iskip").onclick = endIntro; $("#ipause").onclick = togglePause;
+    iclock = 0; ievents = []; ipaused = false; ilast = performance.now(); iraf = requestAnimationFrame(iloop);
     // donador kino teksturasi
-    const cv = $("#grain"), cx = cv.getContext("2d"); cv.width = 320; cv.height = 180; let pulse = 0;
-    (function g() { const im = cx.createImageData(320, 180); for (let i = 0; i < im.data.length; i += 4) { const v = Math.random() * 34; im.data[i] = v * 1.1; im.data[i + 1] = v * .8; im.data[i + 2] = v * .6; im.data[i + 3] = 255; } cx.putImageData(im, 0, 0);
-      pulse *= 0.93; const gr = cx.createRadialGradient(160, 90, 20, 160, 90, 190); gr.addColorStop(0, `rgba(${90 + 80 * pulse},${30 + 10 * pulse},${12},${.25 + .2 * pulse})`); gr.addColorStop(1, "rgba(0,0,0,.92)"); cx.fillStyle = gr; cx.fillRect(0, 0, 320, 180); grainRaf = requestAnimationFrame(g); })();
-    // EKG chizig'i
-    const ec = $("#ecg"), ex = ec.getContext("2d"); const dpr = Math.min(2, devicePixelRatio || 1);
-    ec.width = innerWidth * dpr; ec.height = innerHeight * dpr; const W = ec.width, H = ec.height; const buf = new Array(Math.ceil(W / (3 * dpr))).fill(0); let ey = .5, ea = 1;
-    const WAVE = [0, -.06, -.1, -.06, 0, 0, .1, -1, .5, 0, 0, 0, -.12, -.2, -.24, -.2, -.12, 0];
-    (function e() { for (let k = 0; k < 2; k++) { buf.shift(); buf.push(ecgQ.length ? ecgQ.shift() : (Math.random() - .5) * .015); }
-      ey += (ecgTarget.y - ey) * .03; ea += (ecgTarget.a - ea) * .03;
-      ex.clearRect(0, 0, W, H); const y0 = H * ey, amp = H * .13 * (ey > .7 ? .55 : 1), step = W / buf.length;
-      ex.lineWidth = 2.5 * dpr; ex.strokeStyle = `rgba(255,77,109,${ea})`; ex.shadowColor = "rgba(255,77,109,.9)"; ex.shadowBlur = 14 * dpr; ex.beginPath();
-      buf.forEach((v, i) => { const x = i * step, y = y0 + v * amp; i ? ex.lineTo(x, y) : ex.moveTo(x, y); }); ex.stroke();
-      const hx = W - step, hy = y0 + buf[buf.length - 1] * amp; ex.fillStyle = `rgba(255,255,255,${ea})`; ex.beginPath(); ex.arc(hx, hy, 3.5 * dpr, 0, 7); ex.fill();
-      ecgRaf = requestAnimationFrame(e); })();
-    let rate = 1000;
-    function beatLoop() { sfx("beat"); pulse = 1; ecgQ.push(...WAVE.flatMap(v => [v, v])); beatT = setTimeout(beatLoop, rate); }
+    const cv = $("#grain"), cx = cv.getContext("2d"); cv.width = 320; cv.height = 180;
+    (function g() { if (!ipaused) { const im = cx.createImageData(320, 180); for (let i = 0; i < im.data.length; i += 4) { const v = Math.random() * 34; im.data[i] = v * 1.1; im.data[i + 1] = v * .8; im.data[i + 2] = v * .6; im.data[i + 3] = 255; } cx.putImageData(im, 0, 0);
+      const gr = cx.createRadialGradient(160, 90, 20, 160, 90, 190); gr.addColorStop(0, "rgba(90,30,12,.25)"); gr.addColorStop(1, "rgba(0,0,0,.92)"); cx.fillStyle = gr; cx.fillRect(0, 0, 320, 180); } grainRaf = requestAnimationFrame(g); })();
     const sc = (html) => { const el = $("#iscene"); if (!el) return; const old = el.firstElementChild; if (old) old.classList.add("out");
-      setTimeout(() => { if ($("#iscene")) $("#iscene").innerHTML = `<div class="scene">${html}</div>`; }, old ? 750 : 0); };
-    const typeIn = (sel, txt, sp) => { let i = 0; const go = () => { const e = $(sel); if (!e) return; e.textContent = txt.slice(0, ++i); sfx("type"); if (i < txt.length) introT.push(setTimeout(go, sp)); }; go(); };
-    const at = (ms, fn) => introT.push(setTimeout(fn, ms));
+      at(old ? 750 : 0, () => { if ($("#iscene")) $("#iscene").innerHTML = `<div class="scene">${html}</div>`; }); };
+    const typeIn = (sel, txt, sp) => { let i = 0; const go = () => { const e = $(sel); if (!e) return; e.textContent = txt.slice(0, ++i); sfx("type"); if (i < txt.length) at(sp, go); }; go(); };
     const yearScene = (k, y, place, txt) => `<div class="irow"><div class="artw">${art(k)}</div><div class="itxt"><div class="yr">${y}</div><div class="pl">${place}</div><div class="tx">${txt}</div></div></div>`;
 
-    at(0, () => { beatLoop(); });
-    at(3400, () => { ecgTarget = { y: .86, a: .45 }; sfx("swell"); sc(`<div class="l1">HAQIQIY TARIX ASOSIDA</div><div class="l2">Uchta universitet. Uch asr. Bitta savol.</div>`); });
-    at(8400, () => { sfx("swell"); sc(yearScene("yale", "1701", "KONNEKTIKUT", `Bir guruh ruhoniylar kichik kollej ochadi.<br>Keyinchalik u <b>Yale</b> nomini oladi va qonun hamda siyosat yaratuvchilar maktabiga aylanadi.`)); });
-    at(15000, () => { sfx("swell"); rate = 900; sc(yearScene("mit", "1861", "MASSACHUSETS", `Uilyam Barton Rojers yangi turdagi institut ochadi:<br>fan va amaliyot — bir joyda. Bu — <b>MIT</b>.`)); });
-    at(21600, () => { sfx("swell"); rate = 820; sc(yearScene("stan", "1885", "KALIFORNIYA", `15 yoshli o‘g‘lidan ayrilgan ota-ona boshqa yoshlar uchun universitet qurishga ahd qiladi: <b>Stanford</b>.`)); });
-    at(28200, () => { sfx("swell"); rate = 750;
+    // 1-QISM: yaralish — sokin musiqa (1-musiqa)
+    at(0, () => { iaud.a1 = playMus("m1", 0.75); if (!iaud.a1) sfx("swell");
+      sc(yearScene("yale", "1701", "KONNEKTIKUT", `Bir guruh ruhoniylar kichik kollej ochadi.<br>Keyinchalik u <b>Yale</b> nomini oladi va qonun hamda siyosat yaratuvchilar maktabiga aylanadi.`)); });
+    at(6800, () => { if (!iaud.a1) sfx("swell"); sc(yearScene("mit", "1861", "MASSACHUSETS", `Uilyam Barton Rojers yangi turdagi institut ochadi:<br>fan va amaliyot — bir joyda. Bu — <b>MIT</b>.`)); });
+    at(13400, () => { if (!iaud.a1) sfx("swell"); sc(yearScene("stan", "1885", "KALIFORNIYA", `15 yoshli o‘g‘lidan ayrilgan ota-ona boshqa yoshlar uchun universitet qurishga ahd qiladi: <b>Stanford</b>.`)); });
+    // 2-QISM: rivojlanish — shovqinli musiqa (2-musiqa)
+    at(19800, () => { fade(iaud.a1, 0, 1200); iaud.a2 = playMus("m2", 0.9); if (!iaud.a2) sfx("swell");
       const ch = ["🎓 Universitet", "🔬 Tadqiqot", "🚀 Startap", "💸 Investitsiya", "🛒 Bozor"];
       sc(`<div class="tx" style="margin:0 0 5vh;font-size:3.6vh">Ular bitta ishni qildi: <b>bilimni biznes bilan bog‘ladi</b></div>
         <div class="chain">${ch.map((c, i) => `${i ? `<span class="ca" style="animation-delay:${1.6 + i * .75 - .3}s">→</span>` : ""}<span class="cb" style="animation-delay:${1.6 + i * .75}s">${c}</span>`).join("")}</div>`);
       ch.forEach((_, i) => at(750 + 1600 + i * 750, () => sfx("pop"))); });
-    at(35600, () => { sfx("swell"); rate = 680;
+    at(27200, () => { if (!iaud.a2) sfx("riser", 3.6);
       sc(`<div class="l2" style="font-size:2.8vh;color:#ddd;animation-delay:0s">Bugun ular bilan bog‘liq kompaniyalarning yillik daromadi:</div>
         <div style="display:flex;gap:8vw;margin-top:4vh"><div><div class="money" id="m1">0</div><div class="ml">MIT bitiruvchilari kompaniyalari</div></div><div><div class="money" id="m2" style="color:#f7c948">0</div><div class="ml">Stanfordga bog‘liq kompaniyalar</div></div></div>
         <svg class="chart" viewBox="0 0 600 120"><polyline class="dr" pathLength="1" points="0,115 80,112 160,106 240,98 320,84 400,64 460,44 520,24 600,4" fill="none" stroke="#3ee6c4" stroke-width="3"/></svg>`);
-      at(900, () => { const t0 = performance.now(); (function f(t) { const k = Math.min(1, Math.max(0, (t - t0) / 2800)); const e = 1 - Math.pow(1 - k, 3); const a = $("#m1"), b = $("#m2");
-        if (!a) { if (performance.now() - t0 < 3000) requestAnimationFrame(f); return; }
-        a.textContent = (1.9 * e).toFixed(1).replace(".", ",") + " trln $"; b.textContent = (2.7 * e).toFixed(1).replace(".", ",") + " trln $"; if (k < 1) requestAnimationFrame(f); })(performance.now()); });
-      sfx("riser", 3.6); });
-    at(43000, () => { rate = 600; sfx("swell"); sc(`<div class="tx" style="font-size:4.2vh;max-width:72vw">Har biri alohida davlat bo‘lganida —<br><b style="color:#3ee6c4">dunyoning 10-yirik iqtisodiyoti</b> bo‘lardi.</div>`); });
-    at(48200, () => { rate = 540; sfx("swell"); sc(`<div class="tx" style="font-size:4.6vh">Bu — faqat pul emas.</div><div class="tx" style="font-size:4.6vh;animation-delay:1.8s"><b>Bu — qoidalar, ishonch va bog‘lanishlar.</b></div>`); });
-    at(53600, () => { rate = 460; sc(`<div class="l1" style="font-size:6vh;letter-spacing:.3em"><span id="qq"></span></div>`); setTimeout(() => typeIn("#qq", "QANDAY QILIB?", 120), 800); });
-    at(57600, () => { clearTimeout(beatT); beatT = null; ecgTarget = { y: .86, a: .15 }; });
-    at(58800, () => { sfx("hit"); const f = $("#iflash"); if (f) f.classList.add("on"); ecgTarget = { y: .86, a: 0 };
+      at(900, () => { const t0 = iclock; (function f() { const a = $("#m1"), b = $("#m2"); if (!a) { if (iclock - t0 < 3000) requestAnimationFrame(f); return; }
+        const k = Math.min(1, Math.max(0, (iclock - t0) / 2800)); const e = 1 - Math.pow(1 - k, 3);
+        a.textContent = (1.9 * e).toFixed(1).replace(".", ",") + " trln $"; b.textContent = (2.7 * e).toFixed(1).replace(".", ",") + " trln $"; if (k < 1) requestAnimationFrame(f); })(); }); });
+    at(34600, () => { sc(`<div class="tx" style="font-size:4.2vh;max-width:72vw">Har biri alohida davlat bo‘lganida —<br><b style="color:#3ee6c4">dunyoning 10-yirik iqtisodiyoti</b> bo‘lardi.</div>`); });
+    at(39800, () => { sc(`<div class="tx" style="font-size:4.6vh">Bu — faqat pul emas.</div><div class="tx" style="font-size:4.6vh;animation-delay:1.8s"><b>Bu — qoidalar, ishonch va bog‘lanishlar.</b></div>`); });
+    at(45200, () => { sc(`<div class="l1" style="font-size:6vh;letter-spacing:.3em"><span id="qq"></span></div>`); at(800, () => typeIn("#qq", "QANDAY QILIB?", 120)); });
+    at(49600, () => { sfx("hit"); const f = $("#iflash"); if (f) f.classList.add("on");
       sc(`<div class="ttl grad">MIT · YALE · STANFORD</div><div class="l2" style="font-size:3.2vh;color:#eee">universitetlari va ularning dunyo iqtisodiyotiga ta’siri</div><div class="pl" style="margin-top:4vh;animation-delay:1.4s">TAQDIMOTCHI: ${PRESENTER.toUpperCase()}</div>`); });
-    at(66500, endIntro);
+    at(55000, () => fade(iaud.a2, 0, 2500));
+    at(57500, endIntro);
   }
   function endIntro() {
-    introT.forEach(clearTimeout); introT = []; clearTimeout(beatT); cancelAnimationFrame(grainRaf); cancelAnimationFrame(ecgRaf); music("introMusic", false);
+    cancelAnimationFrame(iraf); cancelAnimationFrame(grainRaf); ievents = [];
+    [iaud.a1, iaud.a2].forEach(a => { if (a) { try { a.pause(); } catch (e) { } } }); iaud.a1 = iaud.a2 = null;
     const b = $("#intro"); if (b) b.remove(); if (st.slide < 0) go(0);
   }
 }
