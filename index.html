@@ -1037,6 +1037,7 @@ function host() {
   function initialPhase(s) { return { quiz: "read", vote: "read", reveal: "warp", results: "board" }[s.type] || "show"; }
   function go(i) {
     if (i < 0) i = 0; if (i >= TOTAL) i = TOTAL - 1;
+    const sq = S[i]; if (sq.type === "quiz") { delete results[sq.qid]; DB.update(R, { ["answers/" + sq.qid]: null, ["results/" + sq.qid]: null }); }
     setState({ slide: i, phase: initialPhase(S[i]), qStart: 0, dur: 0 });
   }
   function prev() { if (Date.now() - lastNav < 500) return; lastNav = Date.now(); if (st.slide > 0) go(st.slide - 1); }
@@ -1065,21 +1066,17 @@ function host() {
   async function closeQuiz() {
     closing = true; const s = S[st.slide]; const q = QUIZ[s.qid];
     try {
-      const existing = await DB.get(`${R}/results/${s.qid}`);
-      const upd = {};
-      if (!existing) {
-        const ans = (await DB.get(`${R}/answers/${s.qid}`)) || {}; const counts = [0, 0, 0, 0]; const pts = {};
-        const sc = (await DB.get(`${R}/scores`)) || {};
-        for (const pid in ans) {
-          const a = ans[pid]; if (a == null || a.a == null) continue; counts[a.a]++;
-          if (a.a === q.c) { const el = Math.max(0, ((a.t || st.qStart) - st.qStart) / 1000); const p = Math.round(1000 - 500 * Math.min(1, el / q.dur)); pts[pid] = p; sc[pid] = (sc[pid] || 0) + p; upd["scores/" + pid] = sc[pid]; }
-          else pts[pid] = 0;
-        }
-        upd["results/" + s.qid] = { counts, c: q.c, pts };
-        results[s.qid] = upd["results/" + s.qid];
+      // Har safar javoblardan qayta hisoblanadi (test qayta o'tkazilsa ham to'g'ri ishlaydi)
+      const ans = (await DB.get(`${R}/answers/${s.qid}`)) || {}; const counts = [0, 0, 0, 0]; const pts = {};
+      for (const pid in ans) {
+        const a = ans[pid]; if (a == null || a.a == null) continue; const ai = Number(a.a); if (!(ai >= 0 && ai < 4)) continue; counts[ai]++;
+        if (ai === q.c) { const el = Math.max(0, ((Number(a.t) || st.qStart) - st.qStart) / 1000); pts[pid] = Math.round(1000 - 500 * Math.min(1, el / q.dur)); }
+        else pts[pid] = 0;
       }
-      st = Object.assign({}, st, { phase: "reveal" }); upd.state = st;
-      await DB.update(R, upd); sfx("ok"); render();
+      const all = (await DB.get(`${R}/results`)) || {}; all[s.qid] = { counts, c: q.c, pts }; results = all;
+      const totals = {}; for (const qid in all) { const p = (all[qid] && all[qid].pts) || {}; for (const pid in p) totals[pid] = (totals[pid] || 0) + (Number(p[pid]) || 0); }
+      st = Object.assign({}, st, { phase: "reveal" });
+      await DB.update(R, { ["results/" + s.qid]: all[s.qid], scores: totals, state: st }); sfx("ok"); render();
     } finally { closing = false; }
   }
 
@@ -1415,6 +1412,8 @@ function player() {
   DB.on(`${R}/scores`, v => { scores = v || {}; draw(); });
   DB.on(`${R}/game`, v => { game = v || {}; draw(); });
   DB.on(`${R}/results`, v => { res = v || {}; draw(); });
+  const myDbAns = {};
+  Object.keys(QUIZ).forEach(qid => DB.on(`${R}/answers/${qid}/${pid}`, v => { if (v && v.a != null) myDbAns[qid] = Number(v.a); else delete myDbAns[qid]; }));
   DB.on(`${R}/votes/country/${pid}`, v => { myVotes.country = v; draw(); });
   DB.on(`${R}/votes/inst/${pid}`, v => { myVotes.inst = v; draw(); });
 
@@ -1461,10 +1460,12 @@ function player() {
 
   function drawQuiz(s) {
     const q = QUIZ[s.qid]; const r = res[s.qid];
+    if (st.phase === "read") delete myAns[s.qid];
     if (st.phase === "reveal") {
-      const mine = r && r.pts && r.pts[pid] != null ? r.pts[pid] : null; const a = myAns[s.qid];
-      if (mine > 0) { app.innerHTML = frame(`<div class="pcard"><div class="big-emoji">🎉</div><h2 class="ok">To‘g‘ri!</h2><div class="pts ok">+${mine}</div></div>`); try { navigator.vibrate && navigator.vibrate(80); } catch (e) { } }
-      else app.innerHTML = frame(`<div class="pcard"><div class="big-emoji">${mine === 0 || a != null ? "😕" : "⌛"}</div><h2 class="no">${mine === 0 || a != null ? "Noto‘g‘ri" : "Javob berilmadi"}</h2><p>To‘g‘ri javob: <b style="color:#fff">${LETTERS[q.c]}) ${q.a[q.c]}</b></p></div>`);
+      const a = myAns[s.qid] != null ? myAns[s.qid] : myDbAns[s.qid];
+      const p = r && r.pts && r.pts[pid] != null ? Number(r.pts[pid]) : null;
+      if (a != null && Number(a) === q.c) { app.innerHTML = frame(`<div class="pcard"><div class="big-emoji">🎉</div><h2 class="ok">To‘g‘ri!</h2>${p ? `<div class="pts ok">+${p}</div>` : ""}<p>${LETTERS[q.c]}) ${q.a[q.c]}</p></div>`); try { navigator.vibrate && navigator.vibrate(80); } catch (e) { } }
+      else app.innerHTML = frame(`<div class="pcard"><div class="big-emoji">${a != null ? "😕" : "⌛"}</div><h2 class="no">${a != null ? "Noto‘g‘ri" : "Javob berilmadi"}</h2>${a != null ? `<p>Siz tanladingiz: <b style="color:#fff">${LETTERS[a]}</b></p>` : ""}<p>To‘g‘ri javob: <b style="color:#fff">${LETTERS[q.c]}) ${q.a[q.c]}</b></p></div>`);
       return;
     }
     if (st.phase === "open" && myAns[s.qid] != null) { app.innerHTML = frame(wait("✅", "Javobingiz qabul qilindi", `Siz tanladingiz: <b style="color:#fff">${LETTERS[myAns[s.qid]]}</b><br>Natijani kuting…`)); return; }
