@@ -291,6 +291,15 @@ body.busted #bgwrap{opacity:.25}
 .pcard.bust{background:rgba(255,30,70,.25);border:2px solid #ff2d55}
 .pcard.bust h2{color:#fff;font-size:26px} .pcard.bust .pts{color:#fff;font-size:56px}
 .pen{color:#ff6b86;font-size:2vh;font-weight:700;margin:-1.4vh 0 2vh 11vw}
+/* ovozsiz rejim tugmasi */
+.mutebtn{white-space:nowrap}
+.mutebtn.on{background:rgba(255,77,109,.25);border-color:#ff4d6d;color:#fff}
+#lobby .lmute{position:absolute;left:2vw;bottom:6vh}
+#player .pfoot .mutebtn{margin-top:10px;height:auto;padding:8px 14px;font-size:13px}
+#intro .ictl .mutebtn{height:auto;padding:1vh 1.2vw;font-size:1.6vh}
+.gsum{margin-top:1.4vh;font-size:2.4vh;color:#dfe4ff}
+.gsum b{font-family:var(--mono);font-size:3vh;color:#fff}
+.pen{color:#cfd6ff;font-size:1.9vh;margin:-1.4vh 0 2.2vh 11vw;font-weight:500}
 
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -640,7 +649,14 @@ function music(id, on, vol) {
   const el = document.getElementById(id); if (!el) return;
   try { if (on) { el.volume = muted ? 0 : (vol == null ? 0.5 : vol); el.currentTime = 0; const p = el.play(); if (p) p.catch(() => { }); } else { el.pause(); } } catch (e) { }
 }
-function setMuted(m) { muted = m; if (MG) MG.gain.value = m ? 0 : 0.9; ["bgm", "introMusic", "finalMusic"].forEach(id => { const el = document.getElementById(id); if (el) el.muted = m; }); }
+let MUSG = null; // intro musiqasi uchun umumiy ovoz tugmasi
+function setMuted(m) { muted = m; try { localStorage.setItem("prez_muted", m ? "1" : "0"); } catch (e) { }
+  if (MG) MG.gain.value = m ? 0 : 0.9; if (MUSG) MUSG.gain.value = m ? 0 : 1;
+  ["bgm", "introMusic", "finalMusic"].forEach(id => { const el = document.getElementById(id); if (el) el.muted = m; });
+  document.querySelectorAll(".mutebtn").forEach(b => { b.textContent = m ? "🔇 Ovozsiz rejim" : "🔊 Ovoz yoqiq"; b.classList.toggle("on", m); }); }
+function muteBtn() { return `<button class="cbtn mutebtn ${muted ? "on" : ""}" onclick="window.__toggleMute()">${muted ? "🔇 Ovozsiz rejim" : "🔊 Ovoz yoqiq"}</button>`; }
+window.__toggleMute = () => setMuted(!muted);
+try { muted = localStorage.getItem("prez_muted") === "1"; } catch (e) { }
 
 /* ------------------------------------------------------------------
    3. Fon: harakatlanuvchi «Institutlar tarmog'i»
@@ -980,6 +996,7 @@ function host() {
       <div class="url">${esc(joinUrl)}</div>
       <div class="names" id="lnames"></div>
       <div class="pl" id="lcount">0 ISHTIROKCHI</div>
+      <div class="lmute">${muteBtn()}</div>
       <button class="cbtn" id="lreset" style="position:absolute;left:2vw;top:2vh">↺ Xonani tozalash</button>
       <button class="cbtn hidden" id="lresume" style="position:absolute;right:2vw;bottom:9vh"></button>
       <div class="mpick"><div class="kick" style="margin:0 0 .8vh">🎵 INTRO MUSIQASI (shu kompyuterdan)</div>
@@ -996,7 +1013,7 @@ function host() {
           <button class="cbtn" id="bhome" title="Boshiga — QR va intro">⏮ Boshiga</button>
           <button class="cbtn" id="bprev" title="Orqaga">◀</button>
           <button class="pbtn" id="bnext">Keyingi ▶</button>
-          <button class="cbtn" id="bmute" title="Ovoz">🔊</button>
+          <span id="bmute">${muteBtn()}</span>
           <button class="cbtn" id="bfs" title="To‘liq ekran">⛶</button>
         </div>
       </div>
@@ -1012,14 +1029,13 @@ function host() {
   $("#bhome").onclick = () => { const b = $("#bhome"); if (!b.dataset.ok) { b.dataset.ok = 1; b.textContent = "Rostdanmi? Yana bosing"; setTimeout(() => { b.dataset.ok = ""; b.textContent = "⏮ Boshiga"; }, 3000); return; }
     b.dataset.ok = ""; b.textContent = "⏮ Boshiga"; saved = st.slide; const rb = $("#lresume"); if (saved > 0) { rb.classList.remove("hidden"); rb.textContent = `⏭ ${saved + 1}-slayddan davom ettirish`; }
     st = { slide: -1, phase: "show" }; write(); lastKey = ""; render(true); };
-  $("#bmute").onclick = () => { setMuted(!muted); $("#bmute").textContent = muted ? "🔇" : "🔊"; };
   $("#bfs").onclick = fs;
   document.addEventListener("keydown", e => {
     if ($("#intro")) { if (e.key === "Escape" || e.key === "ArrowRight") endIntro(); else if (e.key === " " || e.key === "p" || e.key === "P") { e.preventDefault(); togglePause(); } return; }
     if (e.key === "ArrowRight" || e.key === " " || e.key === "PageDown" || e.key === "Enter") { e.preventDefault(); if (st.slide < 0) { ac(); startIntro(); } else next(); }
     else if (e.key === "ArrowLeft" || e.key === "PageUp") prev();
     else if (e.key === "f" || e.key === "F") fs();
-    else if (e.key === "m" || e.key === "M") $("#bmute").click();
+    else if (e.key === "m" || e.key === "M") setMuted(!muted);
   });
   document.addEventListener("pointerdown", () => { ac(); const h = $("#lsnd"); if (h) h.remove(); }, { once: true });
   function fs() { try { if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); } catch (e) { } }
@@ -1279,7 +1295,9 @@ function host() {
       <div class="sub a" style="--d:2">Bu yo‘lni haqiqatda <b style="color:#fff">${cs.name}</b> tanlagan edi</div>
       <div class="res"><div>${cs.facts.map((f, i) => `<div class="fact a" style="--d:${3 + i}"><b>0${i + 1}</b><span>${f}</span></div>`).join("")}</div>
         <div><div class="gdpbox a" style="--d:4"><div class="kick" style="margin:0">AHOLI JON BOSHIGA YaIM · BUGUN</div><div class="v" style="color:${cs.good ? "var(--teal)" : "var(--red)"}">${cs.gdp === "—" ? "Davlat tarqab ketdi" : cs.gdp}</div>
-          ${cs.good ? `<div class="chip" style="display:inline-block;margin-top:1vh;background:${g.color};color:#000">+${GAME_BONUS} ball guruhga</div>` : `<div class="chip" style="display:inline-block;margin-top:1vh">+0 ball</div>`}</div>
+          ${(() => { const gsx = groupScores()[s.g]; const before = gsx.total - gsx.bonus; return cs.good
+            ? `<div class="chip" style="display:inline-block;margin-top:1.2vh;background:${g.color};color:#000;font-size:2.6vh">+${GAME_BONUS} ball guruhga!</div><div class="gsum">${g.emoji} ${g.name} guruh bali: <b>${before}</b> → <b style="color:var(--teal)">${gsx.total}</b></div>`
+            : `<div class="chip" style="display:inline-block;margin-top:1.2vh">+0 ball</div><div class="gsum">${g.emoji} ${g.name} guruh bali: <b>${gsx.total}</b></div>`; })()}</div>
           <div class="alt a" style="--d:6">${cs.good ? `Boshqa yo‘l qanday bo‘lardi? <b style="color:#fff">${d.bad.name}</b>: ${d.bad.facts[d.bad.facts.length - 1]}` : `To‘g‘ri yo‘l bo‘lganida: <b style="color:#fff">${d.good.name}</b> — ${d.good.facts[d.good.facts.length - 1]}`}</div></div></div>
       ${SRC("Jahon banki (aholi jon boshiga YaIM, AQSh dollari); BMT; XVF; tarixiy tadqiqotlar")}`;
   }
@@ -1288,7 +1306,7 @@ function host() {
     const gs = groupScores(); const mx = Math.max(1, ...gs.map(x => Math.abs(x.total)));
     const top = plist().map(p => ({ name: p.name, g: p.group, s: scores[p.id] || 0 })).sort((a, b) => b.s - a.s).slice(0, 5);
     if (st.phase === "board") return `${K("NATIJALAR")}${T("Guruhlar <em>reytingi</em>")}
-      <div class="board"><div>${gs.map((x, k) => `<div class="gbar a" style="--d:${2 + k}"><div class="nm" style="color:${x.color}">${GROUPS[x.i].emoji} ${x.name}</div><div class="tr"><div class="fi" data-w="${Math.max(14, 100 * Math.max(0, x.total) / mx)}" style="background:${x.total < 0 ? "#ff2d55" : x.color}">${x.total}</div></div></div>${x.pen ? `<div class="pen a" style="--d:${2 + k}">🚨 Jarima: −${x.pen} (${x.pen / GAME_PENALTY} kishi o‘yindan chiqqan)</div>` : ""}`).join("")}
+      <div class="board"><div>${gs.map((x, k) => `<div class="gbar a" style="--d:${2 + k}"><div class="nm" style="color:${x.color}">${GROUPS[x.i].emoji} ${x.name}</div><div class="tr"><div class="fi" data-w="${Math.max(14, 100 * Math.max(0, x.total) / mx)}" style="background:${x.total < 0 ? "#ff2d55" : x.color}">${x.total}</div></div></div><div class="pen a" style="--d:${2 + k}">📝 Test: <b>${x.avg}</b> · 🌍 O‘yin bonusi: <b style="color:var(--teal)">+${x.bonus}</b>${x.pen ? ` · 🚨 Jarima: <b style="color:#ff6b86">−${x.pen}</b>` : ""} = <b style="color:#fff">${x.total}</b></div>`).join("")}
         <div class="sub a" style="--d:6;font-size:1.8vh">Guruh bali = a’zolar o‘rtacha test bali + o‘yin bonusi − jarimalar</div></div>
         <div class="a" style="--d:4"><div class="kick">ENG YAXSHI 5 O‘YINCHI</div><ol class="top5">${top.map((p, i) => `<li><span>${i + 1}. ${esc(p.name)} <span style="color:${p.g != null ? GROUPS[p.g].color : "#fff"}">●</span></span><b>${p.s}</b></li>`).join("") || "<li>Hali ishtirokchi yo‘q</li>"}</ol></div></div>`;
     if (st.phase === "drum") return `<div class="center"><div class="big a" style="font-size:7vh;color:var(--gold)">Va bugungi g‘olib…</div><div class="sub a" style="--d:2">«Institutlar laboratoriyasi» g‘olibi</div></div>`;
@@ -1375,12 +1393,12 @@ function host() {
     if (!m.buf) { try { m.buf = await c.decodeAudioData(await m.blob.arrayBuffer()); } catch (e) { return null; } }
     const src = c.createBufferSource(); src.buffer = m.buf; src.loop = true;
     const lp = c.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = opts.freq; lp.Q.value = 0.7;
-    const g = c.createGain(); g.gain.value = 0.0001; src.connect(lp).connect(g).connect(c.destination);
-    const t = c.currentTime; src.start(t); g.gain.exponentialRampToValueAtTime(Math.max(0.0001, (muted ? 0.0001 : opts.vol)), t + (opts.fadeIn || 1.5));
+    const g = c.createGain(); g.gain.value = 0.0001; if (!MUSG) { MUSG = c.createGain(); MUSG.gain.value = muted ? 0 : 1; MUSG.connect(c.destination); } src.connect(lp).connect(g).connect(MUSG);
+    const t = c.currentTime; src.start(t); g.gain.exponentialRampToValueAtTime(Math.max(0.0001, opts.vol), t + (opts.fadeIn || 1.5));
     return { src, lp, g };
   }
   function trackTo(tr, vol, freq, sec) { if (!tr) return; const c = mac(), t = c.currentTime;
-    tr.g.gain.cancelScheduledValues(t); tr.g.gain.setValueAtTime(Math.max(0.0001, tr.g.gain.value), t); tr.g.gain.exponentialRampToValueAtTime(Math.max(0.0001, muted ? 0.0001 : vol), t + sec);
+    tr.g.gain.cancelScheduledValues(t); tr.g.gain.setValueAtTime(Math.max(0.0001, tr.g.gain.value), t); tr.g.gain.exponentialRampToValueAtTime(Math.max(0.0001, vol), t + sec);
     if (freq) { tr.lp.frequency.cancelScheduledValues(t); tr.lp.frequency.setValueAtTime(tr.lp.frequency.value, t); tr.lp.frequency.exponentialRampToValueAtTime(freq, t + sec); } }
   function trackStop(tr, sec) { if (!tr) return; trackTo(tr, 0.0001, null, sec || 1.5); try { tr.src.stop(mac().currentTime + (sec || 1.5) + 0.1); } catch (e) { } }
   function togglePause() {
@@ -1393,7 +1411,7 @@ function host() {
     music("bgm", false); if ($("#intro")) return; heartStop(); ecgStop();
     const box = document.createElement("div"); box.id = "intro";
     box.innerHTML = `<canvas id="grain"></canvas><div class="bars"></div><div id="iscene"></div><div class="flash" id="iflash"></div>
-      <div class="ictl"><button class="skip" id="ipause">⏸ Pauza</button><button class="skip" id="iskip">O‘tkazib yuborish ▶▶</button></div><div class="pbig">⏸</div>`;
+      <div class="ictl">${muteBtn()}<button class="skip" id="ipause">⏸ Pauza</button><button class="skip" id="iskip">O‘tkazib yuborish ▶▶</button></div><div class="pbig">⏸</div>`;
     document.body.appendChild(box); $("#iskip").onclick = endIntro; $("#ipause").onclick = togglePause;
     iclock = 0; ievents = []; ipaused = false; ilast = performance.now(); iraf = requestAnimationFrame(iloop);
     // donador kino teksturasi
@@ -1471,16 +1489,30 @@ function player() {
   Object.keys(QUIZ).forEach(qid => DB.on(`${R}/cheats/${qid}/${pid}`, v => { if (v) myCheat[qid] = true; else delete myCheat[qid]; lastKey = ""; draw(); }));
   const myGCheat = {};
   ["country", "inst"].forEach(step => DB.on(`${R}/gcheats/${step}/${pid}`, v => { if (v) myGCheat[step] = true; else delete myGCheat[step]; lastKey = ""; draw(); }));
-  function onLeave() {
-    if (!st || !me || !me.name) return; const s = S[st.slide];
-    if (s && s.type === "vote" && (st.phase === "read" || st.phase === "open")) {
-      if (myGCheat[s.vote] || me.group == null) return; myGCheat[s.vote] = true; DB.set(`${R}/gcheats/${s.vote}/${pid}`, { g: me.group, t: TS() }); DB.set(`${R}/votes/${s.vote}/${pid}`, null); return;
-    }
-    if (!s || s.type !== "quiz" || !(st.phase === "read" || st.phase === "open")) return;
-    if (myCheat[s.qid]) return; myCheat[s.qid] = true; DB.set(`${R}/cheats/${s.qid}/${pid}`, { t: TS() }); try { sfx("siren", 2); } catch (e) { }
+  // G'irromlik: faqat javob/ovoz OCHIQ paytida va 4 soniyadan uzoq chiqib ketilsa jazolanadi
+  // (ekran bir lahza o'chishi, bildirishnoma kabi tasodiflar jazolanmaydi)
+  const GRACE = 4000; let away = null, awayT = null;
+  function activeCtx() {
+    if (!st || !me || !me.name) return null; const s = S[st.slide];
+    if (s && s.type === "vote" && st.phase === "open" && me.group != null) return { k: "vote", id: s.vote };
+    if (s && s.type === "quiz" && st.phase === "open") return { k: "quiz", id: s.qid };
+    return null;
   }
-  document.addEventListener("visibilitychange", () => { if (document.hidden) onLeave(); else { lastKey = ""; draw(); const s = st && S[st.slide]; if (s && ((s.type === "quiz" && myCheat[s.qid] && st.phase !== "reveal") || (s.type === "vote" && myGCheat[s.vote] && st.phase !== "done"))) { try { ac(); } catch (e) { } sfx("siren", 3); try { navigator.vibrate && navigator.vibrate([400, 150, 400, 150, 600]); } catch (e) { } } } });
-  window.addEventListener("pagehide", onLeave);
+  function punish(ctx) {
+    if (!ctx) return;
+    if (ctx.k === "vote") { if (myGCheat[ctx.id]) return; myGCheat[ctx.id] = true; DB.set(`${R}/gcheats/${ctx.id}/${pid}`, { g: me.group, t: TS() }); DB.set(`${R}/votes/${ctx.id}/${pid}`, null); }
+    else { if (myCheat[ctx.id]) return; myCheat[ctx.id] = true; DB.set(`${R}/cheats/${ctx.id}/${pid}`, { t: TS() }); }
+  }
+  function stillSame(ctx) { const c = activeCtx(); return c && ctx && c.k === ctx.k && c.id === ctx.id; }
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) { const ctx = activeCtx(); if (!ctx) { away = null; return; } away = { ctx, t: Date.now() };
+      clearTimeout(awayT); awayT = setTimeout(() => { if (away && document.hidden && stillSame(away.ctx)) punish(away.ctx); }, GRACE); return; }
+    clearTimeout(awayT);
+    if (away && Date.now() - away.t >= GRACE && stillSame(away.ctx)) punish(away.ctx);
+    away = null; lastKey = ""; draw();
+    const s = st && S[st.slide];
+    if (s && ((s.type === "quiz" && myCheat[s.qid] && st.phase !== "reveal") || (s.type === "vote" && myGCheat[s.vote] && st.phase !== "done"))) { try { ac(); } catch (e) { } sfx("siren", 3); try { navigator.vibrate && navigator.vibrate([400, 150, 400, 150, 600]); } catch (e) { } }
+  });
   const myDbAns = {};
   Object.keys(QUIZ).forEach(qid => DB.on(`${R}/answers/${qid}/${pid}`, v => { if (v && v.a != null) myDbAns[qid] = Number(v.a); else delete myDbAns[qid]; }));
   DB.on(`${R}/votes/country/${pid}`, v => { myVotes.country = v; draw(); });
@@ -1489,7 +1521,7 @@ function player() {
   function frame(body) {
     const g = me && me.group != null ? GROUPS[me.group] : null;
     return `<div id="player"><div class="ph"><div>XONA ${esc(room)}</div><div class="me">${me && me.name ? esc(me.name) : ""} ${g ? `<span style="color:${g.color}">● ${g.name}</span>` : ""}</div></div>
-      <div class="pbody">${body}</div><div class="pfoot">${me && me.name ? `Ballingiz: <b style="color:var(--gold)">${scores[pid] || 0}</b> · ` : ""}TIIAME · INSTITUTSIONAL IQTISODIYOT</div></div>`;
+      <div class="pbody">${body}</div><div class="pfoot">${me && me.name ? `Ballingiz: <b style="color:var(--gold)">${scores[pid] || 0}</b> · ` : ""}TIIAME · INSTITUTSIONAL IQTISODIYOT<br>${muteBtn()}</div></div>`;
   }
   const wait = (emoji, h, p) => `<div class="pcard"><div class="big-emoji">${emoji}</div><h2>${h}</h2>${p ? `<p>${p}</p>` : ""}</div>`;
 
@@ -1517,7 +1549,9 @@ function player() {
     if (s.type === "quiz") return drawQuiz(s);
     document.body.classList.remove("busted");
     if (s.type === "vote") { if (!(myGCheat[s.vote] && st.phase !== "done")) document.body.classList.remove("busted"); return drawVote(s, g); }
-    if (s.type === "reveal") { const mine = me.group === s.g; app.innerHTML = frame(wait(mine ? "⏳" : "👀", mine ? "Sizning guruhingiz natijasi!" : `${GROUPS[s.g].name} guruh natijasi`, "Ekranga qarang")); return; }
+    if (s.type === "reveal") { const mine = me.group === s.g; const bon = Number(((game.bonus || {})[s.g]) || 0);
+      if (mine && st.phase === "show") { app.innerHTML = frame(wait(bon ? "🎉" : "📉", bon ? `Guruhingizga +${bon} ball!` : "Bu yo‘l inqirozga olib keldi", bon ? "To‘g‘ri institutni tanladingiz — ekranga qarang" : "Guruhingiz bonus olmadi — ekranga qarang")); if (bon) confetti(120); return; }
+      app.innerHTML = frame(wait(mine ? "⏳" : "👀", mine ? "Sizning guruhingiz natijasi!" : `${GROUPS[s.g].name} guruh natijasi`, "Ekranga qarang")); return; }
     if (s.type === "results") {
       const arr = Object.entries(scores).sort((a, b) => b[1] - a[1]); const rank = arr.findIndex(x => x[0] === pid) + 1;
       app.innerHTML = frame(wait(st.phase === "win" ? "🎉" : "🏆", st.phase === "win" ? "Natijalar e’lon qilindi!" : "Natijalar ekranda", `Sizning o‘rningiz: <b style="color:#fff">${rank || "—"}</b> / ${Object.keys(players).length}<br>Ballingiz: <b style="color:var(--gold)">${scores[pid] || 0}</b>`));
