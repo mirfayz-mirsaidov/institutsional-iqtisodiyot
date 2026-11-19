@@ -290,6 +290,7 @@ body.busted{animation:bustbg .6s infinite alternate}
 body.busted #bgwrap{opacity:.25}
 .pcard.bust{background:rgba(255,30,70,.25);border:2px solid #ff2d55}
 .pcard.bust h2{color:#fff;font-size:26px} .pcard.bust .pts{color:#fff;font-size:56px}
+.pen{color:#ff6b86;font-size:2vh;font-weight:700;margin:-1.4vh 0 2vh 11vw}
 
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -555,6 +556,7 @@ const PRESENTER = "Mirfayz Mirsaidov";
 const LETTERS = ["A", "B", "C", "D"], SHAPES = ["▲", "◆", "●", "■"];
 const GAME_BONUS = 1500;
 const CHEAT_PENALTY = 500;
+const GAME_PENALTY = 1000;
 
 /* ------------------------------------------------------------------
    1. Ma'lumotlar bazasi (Firebase yoki sinov uchun lokal)
@@ -1037,6 +1039,21 @@ function host() {
     DB.set(R + "/scores", await calcTotals());
     fresh.forEach((k, i) => setTimeout(() => cheatAlert(k.split("/")[1]), i * 2600));
   });
+  let gcheats = {}, seenG = null;
+  DB.on(R + "/gcheats", v => {
+    gcheats = v || {}; const keys = []; for (const st2 in gcheats) for (const pid in (gcheats[st2] || {})) keys.push(st2 + "/" + pid);
+    if (seenG === null) { seenG = new Set(keys); return; }
+    const fresh = keys.filter(k => !seenG.has(k)); fresh.forEach(k => seenG.add(k));
+    fresh.forEach((k, i) => setTimeout(() => { const [st2, pid] = k.split("/"); const r = gcheats[st2] && gcheats[st2][pid]; gameCheatAlert(pid, r ? Number(r.g) : null); }, i * 2600));
+    onLive();
+  });
+  function gameCheatAlert(pid, gi) {
+    const p = players[pid]; const nm = p && p.name ? p.name : "Kimdir"; const g = gi != null && GROUPS[gi] ? GROUPS[gi] : null;
+    const tot = gi != null ? groupScores()[gi].total : null;
+    const el = document.createElement("div"); el.className = "cheat";
+    el.innerHTML = `<div class="ci">🚨</div><div><div class="ct">G‘IRROM O‘YIN!</div><div class="cn"><b>${esc(nm)}</b> o‘yindan chiqib ketdi</div><div class="cp">${g ? `<b style="color:#fff">${g.emoji} ${g.name}</b> guruhidan` : "Guruhidan"} −${GAME_PENALTY} ball${tot != null ? ` · guruh bali endi: <b style="color:#fff">${tot}</b>` : ""}</div></div>`;
+    document.body.appendChild(el); sfx("siren", 2.4); setTimeout(() => el.remove(), 4500);
+  }
   function cheatAlert(pid) {
     const p = players[pid]; const nm = p && p.name ? p.name : "Kimdir"; const g = p && p.group != null ? GROUPS[p.group] : null;
     const el = document.createElement("div"); el.className = "cheat";
@@ -1119,6 +1136,7 @@ function host() {
     closing = true; const s = S[st.slide];
     try {
       const v = (await DB.get(`${R}/votes/${s.vote}`)) || {}; const upd = {};
+      const gch = (await DB.get(`${R}/gcheats/${s.vote}`)) || {}; for (const pid in gch) delete v[pid];  // chetlashtirilganlar ovozi hisobga olinmaydi
       if (s.vote === "country") {
         const tal = [{}, {}, {}];
         for (const pid in v) { const p = players[pid]; if (!p || p.group == null) continue; tal[p.group][v[pid]] = (tal[p.group][v[pid]] || 0) + 1; }
@@ -1167,8 +1185,9 @@ function host() {
     if (s.type === "vote") unLive = DB.on(`${R}/votes/${s.vote}`, v => { live.votes = v || {}; onLive(); });
   }
 
+  function groupPenalty(i) { let n = 0; for (const step in gcheats) for (const pid in (gcheats[step] || {})) { const r = gcheats[step][pid]; if (r && Number(r.g) === i) n++; } return n * GAME_PENALTY; }
   function groupScores() {
-    return GROUPS.map((g, i) => { const m = groupMembers(i); const sum = m.reduce((a, p) => a + (scores[p.id] || 0), 0); const avg = m.length ? Math.round(sum / m.length) : 0; const b = (game.bonus || {})[i] || 0; return { i, name: g.name, color: g.color, members: m.length, avg, bonus: b, total: avg + b }; });
+    return GROUPS.map((g, i) => { const m = groupMembers(i); const sum = m.reduce((a, p) => a + (scores[p.id] || 0), 0); const avg = m.length ? Math.round(sum / m.length) : 0; const b = (game.bonus || {})[i] || 0; const pen = groupPenalty(i); return { i, name: g.name, color: g.color, members: m.length, avg, bonus: b, pen, total: avg + b - pen }; });
   }
 
   // --- chizish ---
@@ -1207,7 +1226,8 @@ function host() {
       ${T("Siz — <em>hukumatsiz</em>. Qaysi qoidani tanlaysiz?")}
       ${SUB("Har bir guruh bitta davlatni tanlaydi va unga iqtisodiy institut joriy qiladi. Keyin tarix natijani haqiqiy raqamlarda ko‘rsatadi.")}
       <div class="groups" id="glive"></div>
-      ${TAKE("Inkluziv yo‘lni tanlagan guruhga <span>+1500 ball</span>. Variantlarda maslahat yo‘q — ehtiyot bo‘ling!", 6)}`;
+      ${TAKE("Inkluziv yo‘lni tanlagan guruhga <span>+1500 ball</span>. Variantlarda maslahat yo‘q — ehtiyot bo‘ling!", 6)}
+      <div class="key a" style="--d:7;border-color:rgba(255,45,85,.6);background:rgba(255,45,85,.12)"><b style="color:#ff6b86">🚨 QOIDA</b><span>O‘yin paytida telefondan boshqa ilova yoki saytga chiqqan har bir kishi uchun guruhdan <span style="color:#ff6b86">−1000 ball</span> ayriladi!</span></div>`;
     if (s.type === "vote" && s.vote === "country") return `
       <div class="qhead"><div>${K("1-BOSQICH · DAVLAT TANLANG")}${T("Guruhingiz bilan <em>bitta davlatni</em> tanlang")}
         <div class="acount a" style="--d:2">${st.phase === "read" ? "Guruhingiz bilan maslahatlashing — ovoz berish tez orada ochiladi" : st.phase === "open" ? "📱 Telefoningizda ovoz bering · bitta davlatni ikki guruh ololmaydi" : "Davlatlar taqsimlandi!"}</div></div>
@@ -1265,11 +1285,11 @@ function host() {
   }
 
   function renderResults() {
-    const gs = groupScores(); const mx = Math.max(1, ...gs.map(x => x.total));
+    const gs = groupScores(); const mx = Math.max(1, ...gs.map(x => Math.abs(x.total)));
     const top = plist().map(p => ({ name: p.name, g: p.group, s: scores[p.id] || 0 })).sort((a, b) => b.s - a.s).slice(0, 5);
     if (st.phase === "board") return `${K("NATIJALAR")}${T("Guruhlar <em>reytingi</em>")}
-      <div class="board"><div>${gs.map((x, k) => `<div class="gbar a" style="--d:${2 + k}"><div class="nm" style="color:${x.color}">${GROUPS[x.i].emoji} ${x.name}</div><div class="tr"><div class="fi" data-w="${100 * x.total / mx}" style="background:${x.color}">${x.total}</div></div></div>`).join("")}
-        <div class="sub a" style="--d:6;font-size:1.8vh">Guruh bali = a’zolar o‘rtacha test bali + o‘yin bonusi</div></div>
+      <div class="board"><div>${gs.map((x, k) => `<div class="gbar a" style="--d:${2 + k}"><div class="nm" style="color:${x.color}">${GROUPS[x.i].emoji} ${x.name}</div><div class="tr"><div class="fi" data-w="${Math.max(14, 100 * Math.max(0, x.total) / mx)}" style="background:${x.total < 0 ? "#ff2d55" : x.color}">${x.total}</div></div></div>${x.pen ? `<div class="pen a" style="--d:${2 + k}">🚨 Jarima: −${x.pen} (${x.pen / GAME_PENALTY} kishi o‘yindan chiqqan)</div>` : ""}`).join("")}
+        <div class="sub a" style="--d:6;font-size:1.8vh">Guruh bali = a’zolar o‘rtacha test bali + o‘yin bonusi − jarimalar</div></div>
         <div class="a" style="--d:4"><div class="kick">ENG YAXSHI 5 O‘YINCHI</div><ol class="top5">${top.map((p, i) => `<li><span>${i + 1}. ${esc(p.name)} <span style="color:${p.g != null ? GROUPS[p.g].color : "#fff"}">●</span></span><b>${p.s}</b></li>`).join("") || "<li>Hali ishtirokchi yo‘q</li>"}</ol></div></div>`;
     if (st.phase === "drum") return `<div class="center"><div class="big a" style="font-size:7vh;color:var(--gold)">Va bugungi g‘olib…</div><div class="sub a" style="--d:2">«Institutlar laboratoriyasi» g‘olibi</div></div>`;
     const w = gs.slice().sort((a, b) => b.total - a.total)[0]; const best = top[0];
@@ -1449,11 +1469,17 @@ function player() {
   DB.on(`${R}/results`, v => { res = v || {}; draw(); });
   const myCheat = {};
   Object.keys(QUIZ).forEach(qid => DB.on(`${R}/cheats/${qid}/${pid}`, v => { if (v) myCheat[qid] = true; else delete myCheat[qid]; lastKey = ""; draw(); }));
+  const myGCheat = {};
+  ["country", "inst"].forEach(step => DB.on(`${R}/gcheats/${step}/${pid}`, v => { if (v) myGCheat[step] = true; else delete myGCheat[step]; lastKey = ""; draw(); }));
   function onLeave() {
-    if (!st || !me || !me.name) return; const s = S[st.slide]; if (!s || s.type !== "quiz" || !(st.phase === "read" || st.phase === "open")) return;
+    if (!st || !me || !me.name) return; const s = S[st.slide];
+    if (s && s.type === "vote" && (st.phase === "read" || st.phase === "open")) {
+      if (myGCheat[s.vote] || me.group == null) return; myGCheat[s.vote] = true; DB.set(`${R}/gcheats/${s.vote}/${pid}`, { g: me.group, t: TS() }); DB.set(`${R}/votes/${s.vote}/${pid}`, null); return;
+    }
+    if (!s || s.type !== "quiz" || !(st.phase === "read" || st.phase === "open")) return;
     if (myCheat[s.qid]) return; myCheat[s.qid] = true; DB.set(`${R}/cheats/${s.qid}/${pid}`, { t: TS() }); try { sfx("siren", 2); } catch (e) { }
   }
-  document.addEventListener("visibilitychange", () => { if (document.hidden) onLeave(); else { lastKey = ""; draw(); const s = st && S[st.slide]; if (s && s.type === "quiz" && myCheat[s.qid] && st.phase !== "reveal") { try { ac(); } catch (e) { } sfx("siren", 3); try { navigator.vibrate && navigator.vibrate([400, 150, 400, 150, 600]); } catch (e) { } } } });
+  document.addEventListener("visibilitychange", () => { if (document.hidden) onLeave(); else { lastKey = ""; draw(); const s = st && S[st.slide]; if (s && ((s.type === "quiz" && myCheat[s.qid] && st.phase !== "reveal") || (s.type === "vote" && myGCheat[s.vote] && st.phase !== "done"))) { try { ac(); } catch (e) { } sfx("siren", 3); try { navigator.vibrate && navigator.vibrate([400, 150, 400, 150, 600]); } catch (e) { } } } });
   window.addEventListener("pagehide", onLeave);
   const myDbAns = {};
   Object.keys(QUIZ).forEach(qid => DB.on(`${R}/answers/${qid}/${pid}`, v => { if (v && v.a != null) myDbAns[qid] = Number(v.a); else delete myDbAns[qid]; }));
@@ -1490,7 +1516,7 @@ function player() {
     const s = S[st.slide];
     if (s.type === "quiz") return drawQuiz(s);
     document.body.classList.remove("busted");
-    if (s.type === "vote") return drawVote(s, g);
+    if (s.type === "vote") { if (!(myGCheat[s.vote] && st.phase !== "done")) document.body.classList.remove("busted"); return drawVote(s, g); }
     if (s.type === "reveal") { const mine = me.group === s.g; app.innerHTML = frame(wait(mine ? "⏳" : "👀", mine ? "Sizning guruhingiz natijasi!" : `${GROUPS[s.g].name} guruh natijasi`, "Ekranga qarang")); return; }
     if (s.type === "results") {
       const arr = Object.entries(scores).sort((a, b) => b[1] - a[1]); const rank = arr.findIndex(x => x[0] === pid) + 1;
@@ -1530,6 +1556,13 @@ function player() {
 
   function drawVote(s, g) {
     const gc = game.country || {};
+    if (myGCheat[s.vote] && st.phase !== "done") {
+      document.body.classList.add("busted");
+      app.innerHTML = frame(`<div class="pcard bust"><div class="big-emoji">🚨</div><h2>SIZ O‘YINDAN CHIQIB KETDINGIZ!</h2>
+        <p style="color:#fff">O‘yin paytida boshqa ilova yoki saytga o‘tdingiz.</p><div class="pts">−${GAME_PENALTY}</div>
+        <p style="color:#fff"><b>${g ? g.emoji + " " + g.name + " guruhingizdan" : "Guruhingizdan"} ${GAME_PENALTY} ball ayrildi.</b><br>Bu bosqichda ovozingiz hisobga olinmaydi.</p></div>`);
+      return;
+    }
     if (s.vote === "country") {
       if (st.phase === "done") { const c = COUNTRIES[gc[me.group]]; app.innerHTML = frame(wait(c ? c.flag : "🌍", c ? `Guruhingiz davlati: ${c.name}` : "Davlatlar taqsimlandi", c ? `${c.year}-yil. ${c.sit}` : "")); return; }
       const sel = myVotes.country;
