@@ -949,7 +949,7 @@ function host() {
       </div>
     </div>`;
 
-  $("#lgo").onclick = () => { ac(); startIntro(); };
+  $("#lgo").onclick = () => { ac(); mac(); startIntro(); };
   $("#lresume").onclick = () => { ac(); if (saved >= 0) go(saved); };
   $("#lreset").onclick = async () => { if (!$("#lreset").dataset.ok) { $("#lreset").dataset.ok = 1; $("#lreset").textContent = "Rostdan tozalaysizmi? Yana bosing"; return; }
     await DB.set(R, null); location.reload(); };
@@ -1261,12 +1261,11 @@ function host() {
   const idb = () => new Promise((res, rej) => { const r = indexedDB.open("prez_musiqa", 1); r.onupgradeneeded = () => r.result.createObjectStore("f"); r.onsuccess = () => res(r.result); r.onerror = rej; });
   async function idbPut(k, v) { try { const d = await idb(); d.transaction("f", "readwrite").objectStore("f").put(v, k); } catch (e) { } }
   async function idbGet(k) { try { const d = await idb(); return await new Promise(r => { const q = d.transaction("f").objectStore("f").get(k); q.onsuccess = () => r(q.result); q.onerror = () => r(null); }); } catch (e) { return null; } }
-  function setMus(k, file) { if (!file) return; if (MUS[k]) URL.revokeObjectURL(MUS[k].url); MUS[k] = { url: URL.createObjectURL(file), name: file.name || "musiqa" }; const l = $("#" + k + "name"); if (l) l.textContent = "✓ " + MUS[k].name; }
+  function setMus(k, file) { if (!file) return; if (MUS[k]) URL.revokeObjectURL(MUS[k].url); MUS[k] = { url: URL.createObjectURL(file), name: file.name || "musiqa", blob: file }; const l = $("#" + k + "name"); if (l) l.textContent = "✓ " + MUS[k].name; }
   ["m1", "m2"].forEach(k => { idbGet(k).then(f => { if (f) setMus(k, f); });
     const inp = $("#" + k + "in"); if (inp) inp.onchange = () => { const f = inp.files[0]; if (f) { setMus(k, f); idbPut(k, f); } }; });
 
   let iclock = 0, ilast = 0, ipaused = false, iraf = 0, ievents = [], grainRaf = 0;
-  const iaud = { a1: null, a2: null };
   const ART = {
     yale: "M10 190H290 M40 190V118H260V190 M112 118V44H188V118 M112 44L120 30L128 44L136 30L144 44L152 30L160 44L168 30L176 44L184 30L188 44 M136 118V92Q150 70 164 92V118 M62 178V150Q77 128 92 150V178Z M208 178V150Q223 128 238 150V178Z M128 70H172 M128 58H172",
     mit: "M10 190H290 M30 190V112H270V190 M30 112L150 92L270 112 M90 100Q150 18 210 100 M105 92Q150 40 195 92 M150 30V22 M52 112V182 M80 112V182 M108 112V182 M136 112V182 M164 112V182 M192 112V182 M220 112V182 M248 112V182 M30 182H270",
@@ -1276,11 +1275,25 @@ function host() {
   // intro soati: pauzada to'xtaydi
   const at = (ms, fn) => ievents.push({ t: iclock + ms, fn });
   function iloop(now) { if (!ipaused) { iclock += Math.min(100, now - ilast); const due = ievents.filter(e => e.t <= iclock); ievents = ievents.filter(e => e.t > iclock); due.forEach(e => { try { e.fn(); } catch (x) { } }); } ilast = now; iraf = requestAnimationFrame(iloop); }
-  function fade(a, to, ms) { if (!a) return; const from = a.volume, t0 = iclock; (function f() { if (!a) return; const k = Math.min(1, (iclock - t0) / ms); a.volume = Math.max(0, Math.min(1, from + (to - from) * k)) * (muted ? 0 : 1); if (k < 1) requestAnimationFrame(f); else if (to === 0) a.pause(); })(); }
-  function playMus(k, vol) { const m = MUS[k]; if (!m) return null; const a = new Audio(m.url); a.volume = 0; const p = a.play(); if (p) p.catch(() => { }); fade(a, vol, 1500); return a; }
+  // Musiqa Web Audio orqali: qo'shiq aylanib (loop) chalinadi, filtr bilan «sokin» → «shovqinli» qilinadi
+  let MAC = null; const trk = { cur: null };
+  function mac() { if (!MAC) MAC = new (window.AudioContext || window.webkitAudioContext)(); if (MAC.state === "suspended" && !ipaused) MAC.resume(); return MAC; }
+  async function startTrack(k, opts) {
+    const m = MUS[k]; if (!m || !m.blob) return null; const c = mac();
+    if (!m.buf) { try { m.buf = await c.decodeAudioData(await m.blob.arrayBuffer()); } catch (e) { return null; } }
+    const src = c.createBufferSource(); src.buffer = m.buf; src.loop = true;
+    const lp = c.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = opts.freq; lp.Q.value = 0.7;
+    const g = c.createGain(); g.gain.value = 0.0001; src.connect(lp).connect(g).connect(c.destination);
+    const t = c.currentTime; src.start(t); g.gain.exponentialRampToValueAtTime(Math.max(0.0001, (muted ? 0.0001 : opts.vol)), t + (opts.fadeIn || 1.5));
+    return { src, lp, g };
+  }
+  function trackTo(tr, vol, freq, sec) { if (!tr) return; const c = mac(), t = c.currentTime;
+    tr.g.gain.cancelScheduledValues(t); tr.g.gain.setValueAtTime(Math.max(0.0001, tr.g.gain.value), t); tr.g.gain.exponentialRampToValueAtTime(Math.max(0.0001, muted ? 0.0001 : vol), t + sec);
+    if (freq) { tr.lp.frequency.cancelScheduledValues(t); tr.lp.frequency.setValueAtTime(tr.lp.frequency.value, t); tr.lp.frequency.exponentialRampToValueAtTime(freq, t + sec); } }
+  function trackStop(tr, sec) { if (!tr) return; trackTo(tr, 0.0001, null, sec || 1.5); try { tr.src.stop(mac().currentTime + (sec || 1.5) + 0.1); } catch (e) { } }
   function togglePause() {
     const box = $("#intro"); if (!box) return; ipaused = !ipaused; box.classList.toggle("paused", ipaused);
-    [iaud.a1, iaud.a2].forEach(a => { if (a && !a.ended && a.volume > 0) { if (ipaused) a.pause(); else { const p = a.play(); if (p) p.catch(() => { }); } } });
+    if (MAC) { if (ipaused) MAC.suspend(); else MAC.resume(); }
     $("#ipause").textContent = ipaused ? "▶ Davom ettirish" : "⏸ Pauza";
   }
 
@@ -1301,17 +1314,21 @@ function host() {
     const yearScene = (k, y, place, txt) => `<div class="irow"><div class="artw">${art(k)}</div><div class="itxt"><div class="yr">${y}</div><div class="pl">${place}</div><div class="tx">${txt}</div></div></div>`;
 
     // 1-QISM: yaralish — sokin musiqa (1-musiqa)
-    at(0, () => { iaud.a1 = playMus("m1", 0.75); if (!iaud.a1) sfx("swell");
+    let usedM1 = false;
+    at(0, () => { usedM1 = !!MUS.m1; if (usedM1) startTrack("m1", { vol: 0.5, freq: 900, fadeIn: 2 }).then(t => { trk.a = t; }); else sfx("swell");
       sc(yearScene("yale", "1701", "KONNEKTIKUT", `Bir guruh ruhoniylar kichik kollej ochadi.<br>Keyinchalik u <b>Yale</b> nomini oladi va qonun hamda siyosat yaratuvchilar maktabiga aylanadi.`)); });
-    at(6800, () => { if (!iaud.a1) sfx("swell"); sc(yearScene("mit", "1861", "MASSACHUSETS", `Uilyam Barton Rojers yangi turdagi institut ochadi:<br>fan va amaliyot — bir joyda. Bu — <b>MIT</b>.`)); });
-    at(13400, () => { if (!iaud.a1) sfx("swell"); sc(yearScene("stan", "1885", "KALIFORNIYA", `15 yoshli o‘g‘lidan ayrilgan ota-ona boshqa yoshlar uchun universitet qurishga ahd qiladi: <b>Stanford</b>.`)); });
+    at(6800, () => { if (!usedM1) sfx("swell"); sc(yearScene("mit", "1861", "MASSACHUSETS", `Uilyam Barton Rojers yangi turdagi institut ochadi:<br>fan va amaliyot — bir joyda. Bu — <b>MIT</b>.`)); });
+    at(13400, () => { if (!usedM1) trackTo(null); if (!usedM1) sfx("swell"); else trackTo(trk.a, 0.6, 1600, 5); sc(yearScene("stan", "1885", "KALIFORNIYA", `15 yoshli o‘g‘lidan ayrilgan ota-ona boshqa yoshlar uchun universitet qurishga ahd qiladi: <b>Stanford</b>.`)); });
     // 2-QISM: rivojlanish — shovqinli musiqa (2-musiqa)
-    at(19800, () => { fade(iaud.a1, 0, 1200); iaud.a2 = playMus("m2", 0.9); if (!iaud.a2) sfx("swell");
+    at(19800, () => {
+      if (MUS.m2) { trackStop(trk.a, 1.2); startTrack("m2", { vol: 0.95, freq: 20000, fadeIn: 0.8 }).then(t => { trk.b = t; }); }
+      else if (trk.a) { trackTo(trk.a, 1.0, 18000, 1.2); trk.b = trk.a; }  // o'sha qo'shiq davom etadi — endi to'liq va baland
+      else sfx("swell");
       const ch = ["🎓 Universitet", "🔬 Tadqiqot", "🚀 Startap", "💸 Investitsiya", "🛒 Bozor"];
       sc(`<div class="tx" style="margin:0 0 5vh;font-size:3.6vh">Ular bitta ishni qildi: <b>bilimni biznes bilan bog‘ladi</b></div>
         <div class="chain">${ch.map((c, i) => `${i ? `<span class="ca" style="animation-delay:${1.6 + i * .75 - .3}s">→</span>` : ""}<span class="cb" style="animation-delay:${1.6 + i * .75}s">${c}</span>`).join("")}</div>`);
       ch.forEach((_, i) => at(750 + 1600 + i * 750, () => sfx("pop"))); });
-    at(27200, () => { if (!iaud.a2) sfx("riser", 3.6);
+    at(27200, () => { if (!trk.b) sfx("riser", 3.6);
       sc(`<div class="l2" style="font-size:2.8vh;color:#ddd;animation-delay:0s">Bugun ular bilan bog‘liq kompaniyalarning yillik daromadi:</div>
         <div style="display:flex;gap:8vw;margin-top:4vh"><div><div class="money" id="m1">0</div><div class="ml">MIT bitiruvchilari kompaniyalari</div></div><div><div class="money" id="m2" style="color:#f7c948">0</div><div class="ml">Stanfordga bog‘liq kompaniyalar</div></div></div>
         <svg class="chart" viewBox="0 0 600 120"><polyline class="dr" pathLength="1" points="0,115 80,112 160,106 240,98 320,84 400,64 460,44 520,24 600,4" fill="none" stroke="#3ee6c4" stroke-width="3"/></svg>`);
@@ -1323,12 +1340,12 @@ function host() {
     at(45200, () => { sc(`<div class="l1" style="font-size:6vh;letter-spacing:.3em"><span id="qq"></span></div>`); at(800, () => typeIn("#qq", "QANDAY QILIB?", 120)); });
     at(49600, () => { sfx("hit"); const f = $("#iflash"); if (f) f.classList.add("on");
       sc(`<div class="ttl grad">MIT · YALE · STANFORD</div><div class="l2" style="font-size:3.2vh;color:#eee">universitetlari va ularning dunyo iqtisodiyotiga ta’siri</div><div class="pl" style="margin-top:4vh;animation-delay:1.4s">TAQDIMOTCHI: ${PRESENTER.toUpperCase()}</div>`); });
-    at(55000, () => fade(iaud.a2, 0, 2500));
+    at(54500, () => trackStop(trk.b || trk.a, 3));
     at(57500, endIntro);
   }
   function endIntro() {
     cancelAnimationFrame(iraf); cancelAnimationFrame(grainRaf); ievents = [];
-    [iaud.a1, iaud.a2].forEach(a => { if (a) { try { a.pause(); } catch (e) { } } }); iaud.a1 = iaud.a2 = null;
+    trackStop(trk.a, 0.6); if (trk.b && trk.b !== trk.a) trackStop(trk.b, 0.6); trk.a = trk.b = null; if (MAC && MAC.state === "suspended") MAC.resume();
     const b = $("#intro"); if (b) b.remove(); if (st.slide < 0) go(0);
   }
 }
