@@ -917,6 +917,7 @@ function host() {
       <div class="names" id="lnames"></div>
       <div class="pl" id="lcount">0 ISHTIROKCHI</div>
       <button class="cbtn" id="lreset" style="position:absolute;left:2vw;top:2vh">↺ Xonani tozalash</button>
+      <button class="cbtn hidden" id="lresume" style="position:absolute;right:2vw;bottom:9vh"></button>
       <button class="pbtn go" id="lgo">▶ INTRONI BOSHLASH</button>
     </div>
     <div id="stage" class="hidden">
@@ -925,6 +926,7 @@ function host() {
       <div class="bottombar">
         <div class="joinbox"><div class="qr">${QR}</div><div>XONA · <b>${room}</b><br><span id="pc">0 ishtirokchi</span></div></div>
         <div class="ctrls">
+          <button class="cbtn" id="bhome" title="Boshiga — QR va intro">⏮ Boshiga</button>
           <button class="cbtn" id="bprev" title="Orqaga">◀</button>
           <button class="pbtn" id="bnext">Keyingi ▶</button>
           <button class="cbtn" id="bmute" title="Ovoz">🔊</button>
@@ -934,11 +936,15 @@ function host() {
     </div>`;
 
   $("#lgo").onclick = () => { ac(); startIntro(); };
+  $("#lresume").onclick = () => { ac(); if (saved >= 0) go(saved); };
   $("#lreset").onclick = async () => { if (!$("#lreset").dataset.ok) { $("#lreset").dataset.ok = 1; $("#lreset").textContent = "Rostdan tozalaysizmi? Yana bosing"; return; }
     await DB.set(R, null); location.reload(); };
   $("#stage").addEventListener("dblclick", e => { if (e.target.closest(".topbar")) { st = { slide: -1, phase: "show" }; write(); lastKey = ""; render(true); } });
   $("#bnext").onclick = () => next();
   $("#bprev").onclick = () => prev();
+  $("#bhome").onclick = () => { const b = $("#bhome"); if (!b.dataset.ok) { b.dataset.ok = 1; b.textContent = "Rostdanmi? Yana bosing"; setTimeout(() => { b.dataset.ok = ""; b.textContent = "⏮ Boshiga"; }, 3000); return; }
+    b.dataset.ok = ""; b.textContent = "⏮ Boshiga"; saved = st.slide; const rb = $("#lresume"); if (saved > 0) { rb.classList.remove("hidden"); rb.textContent = `⏭ ${saved + 1}-slayddan davom ettirish`; }
+    st = { slide: -1, phase: "show" }; write(); lastKey = ""; render(true); };
   $("#bmute").onclick = () => { setMuted(!muted); $("#bmute").textContent = muted ? "🔇" : "🔊"; };
   $("#bfs").onclick = fs;
   document.addEventListener("keydown", e => {
@@ -956,7 +962,11 @@ function host() {
   DB.on(R + "/scores", v => { scores = v || {}; onLive(); });
   DB.on(R + "/game", v => { game = v || {}; if (needs) render(true); else onLive(); });
   DB.on(R + "/results", v => { results = v || {}; if (needs) render(true); });
-  DB.get(R + "/state").then(v => { if (v && typeof v.slide === "number") { st = v; render(true); } else { write(); render(true); } });
+  // Sahifa har ochilganda QR va intro (lobbi) bilan boshlanadi; oldingi joy saqlanadi
+  let saved = -1;
+  DB.get(R + "/state").then(v => {
+    if (v && typeof v.slide === "number" && v.slide > 0) { saved = v.slide; const rb = $("#lresume"); rb.classList.remove("hidden"); rb.textContent = `⏭ ${v.slide + 1}-slayddan davom ettirish`; }
+    st = { slide: -1, phase: "show" }; write(); render(true); });
 
   function write() { DB.set(R + "/state", st); }
   function setState(ns) { st = Object.assign({}, ns); write(); render(); }
