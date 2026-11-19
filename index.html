@@ -261,6 +261,7 @@ h1.t{font-size:6.6vh}
 #intro .chart .dr{animation-duration:3s;animation-delay:.8s}
 #intro .bars{z-index:3} #intro .skip{z-index:5} #intro .flash{z-index:4}
 #intro .bars:before,#intro .bars:after{z-index:3}
+#intro .money{font-size:9vh;white-space:nowrap}
 
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -734,7 +735,6 @@ const S = [
       </div>
       ${KEY("MIT, Yale va Stanford ta’siridagi eng muhim umumiy omil — <span>bilim va innovatsiyani biznes bilan bog‘lash</span>.", 7)}` },
 
-  /* 6 */ { type: "quiz", qid: "q1" },
 
   /* 7 */ { type: "content", render: () => `
       ${K("TARIX · MIT")}
@@ -755,7 +755,6 @@ const S = [
       <div class="card a" style="--d:11;margin-top:2.6vh"><div class="tag">MISOL · RADAR</div><p>Urush yillari MIT laboratoriyasida radar ustida ishlandi (<b style="color:#fff">tadqiqot</b>) → mikroto‘lqinli radar yaratildi (<b style="color:#fff">texnologiya</b>) → aviatsiya va mudofaa kompaniyalari uni ishlab chiqardi, keyinchalik shu texnologiyadan mikroto‘lqinli pech ham paydo bo‘ldi (<b style="color:#fff">sanoat</b>) → yangi bozorlar va ish o‘rinlari (<b style="color:#fff">o‘sish</b>).</p></div>
       ${KEY("MIT modeli: <span>Tadqiqot → Texnologiya → Sanoat → O‘sish</span>. Marketing, kredit yoki diplom bu zanjirning boshida emas.", 13)}` },
 
-  /* 9 */ { type: "quiz", qid: "q2" },
 
   /* 10 */ { type: "content", render: () => `
       ${K("RAQAMLARDA · MIT")}
@@ -767,7 +766,6 @@ const S = [
       ${KEY("1,9 trillion dollar — <span>MIT bitiruvchilari asos solgan kompaniyalarning yillik daromadi</span>.", 10)}
       ${SRC("Roberts, Merrey, Kim — «MITda tadbirkorlik va innovatsiya», MIT Sloan, 2015")}` },
 
-  /* 11 */ { type: "quiz", qid: "q4" },
 
   /* 12 */ { type: "content", render: () => `
       ${K("TARIX · STANFORD")}
@@ -789,7 +787,6 @@ const S = [
       ${KEY("Stanford modelidagi muhim bog‘liqlik: <span>Universitet → Startap → Investitsiya → Bozor</span>.", 13)}
       ${SRC("Stanford texnologiya litsenziyalash idorasi")}` },
 
-  /* 14 */ { type: "quiz", qid: "q3" },
 
   /* 15 */ { type: "content", render: () => `
       ${K("RAQAMLARDA · STANFORD")}
@@ -801,7 +798,6 @@ const S = [
       ${KEY("2,7 trillion dollar — <span>Stanfordga bog‘liq kompaniyalar miqyosi</span> (ularning yillik daromadi).", 10)}
       ${SRC("Isli va Miller — «Stanfordning innovatsiya va tadbirkorlik orqali iqtisodiy ta’siri», 2012")}` },
 
-  /* 16 */ { type: "quiz", qid: "q5" },
 
   /* 17 */ { type: "content", render: () => `
       ${K("YALE · PUL VA QOIDALAR")}
@@ -826,7 +822,6 @@ const S = [
       ${KEY("Olimlar kuchli bo‘lsa-yu, texnologiya transferi tizimi bo‘lmasa — <span>ilmiy bilimni iqtisodiy qiymatga aylantirish qiyinlashadi</span>.", 13)}
       ${SRC("AQSh Bayh–Dole qonuni (1980); AQSh Hisob palatasi")}` },
 
-  /* 19 */ { type: "quiz", qid: "q7" },
 
   /* 20 */ { type: "content", render: () => `
       ${K("INNOVATSION EKOTIZIM")}
@@ -844,8 +839,6 @@ const S = [
         <div class="card red a" style="--d:4"><div class="tag" style="color:var(--red)">✗ KO‘CHIRIB BO‘LMAYDI</div><p>⚖️ Mustaqil sud va mulk huquqiga ishonch</p><p>💸 Rivojlangan venchur kapital bozori</p><p>🤝 Universitet, biznes va davlat o‘rtasidagi ishonch</p><p>🌐 Bitiruvchilar va investorlar tarmog‘i</p><p>🔁 Xatoga yo‘l beradigan tadbirkorlik madaniyati</p></div></div>
       ${KEY("Boshqa universitet MIT modelini shunchaki ko‘chirib, ayni natijaga erisha olmaydi, chunki <span>natija butun institutsional ekotizimga bog‘liq</span>.", 7)}` },
 
-  /* 22 */ { type: "quiz", qid: "q9" },
-  /* 23 */ { type: "quiz", qid: "q6" },
 
   /* 24 */ { type: "content", render: () => `
       ${K("O‘ZBEKISTON UCHUN SABOQ")}
@@ -862,7 +855,6 @@ const S = [
           <p>🧭 <b style="color:#fff">Barqaror qoidalar</b> — investor 10 yil oldinni ko‘ra olishi</p></div></div>
       ${KEY("Investor va startap tizimi bo‘lmasa, <span>ilmiy natijalar tijoratlashmasdan qolishi mumkin</span>. Foyda o‘z-o‘zidan kelmaydi.", 7)}` },
 
-  /* 25 */ { type: "quiz", qid: "q8" },
 
   /* 26 */ { type: "content", render: () => `
       ${K("ASOSIY XULOSA")}
@@ -873,7 +865,16 @@ const S = [
         { ic: "🔗", h: "Bog‘lanishlar", p: "Universitet, olim, startap, investor va davlat o‘rtasidagi aloqa. Bilim aynan shu zanjir orqali boylikka aylanadi." }], 3)}
       ${KEY("Institutsional iqtisodiyot xulosasi: <span>kapitaldan ko‘ra institutlar va bog‘lanishlar ham muhim</span>. Asemo‘g‘lu, Jonson va Robinson bu g‘oya uchun 2024-yilda Nobel mukofotini olishdi (ikkisi — MIT professorlari).", 7)}` },
 
-  /* 27 */ { type: "quiz", qid: "q10" },
+  { type: "quiz", qid: "q1" },
+  { type: "quiz", qid: "q2" },
+  { type: "quiz", qid: "q3" },
+  { type: "quiz", qid: "q4" },
+  { type: "quiz", qid: "q5" },
+  { type: "quiz", qid: "q6" },
+  { type: "quiz", qid: "q7" },
+  { type: "quiz", qid: "q8" },
+  { type: "quiz", qid: "q9" },
+  { type: "quiz", qid: "q10" },
   /* 28 */ { type: "gameintro" },
   /* 29 */ { type: "vote", vote: "country" },
   /* 30 */ { type: "vote", vote: "inst" },
@@ -986,9 +987,11 @@ function host() {
     if (i < 0) i = 0; if (i >= TOTAL) i = TOTAL - 1;
     setState({ slide: i, phase: initialPhase(S[i]), qStart: 0, dur: 0 });
   }
-  function prev() { if (st.slide > 0) go(st.slide - 1); }
+  function prev() { if (Date.now() - lastNav < 500) return; lastNav = Date.now(); if (st.slide > 0) go(st.slide - 1); }
+  let lastNav = 0;
   async function next() {
     if (closing) return;
+    if (Date.now() - lastNav < 900) return; lastNav = Date.now();
     const s = S[st.slide]; if (!s) return;
     if (s.type === "quiz") {
       if (st.phase === "read") { sfx("pop"); setState({ slide: st.slide, phase: "open", qStart: now(), dur: QUIZ[s.qid].dur }); }
@@ -1285,13 +1288,15 @@ function host() {
       const ch = ["🎓 Universitet", "🔬 Tadqiqot", "🚀 Startap", "💸 Investitsiya", "🛒 Bozor"];
       sc(`<div class="tx" style="margin:0 0 5vh;font-size:3.6vh">Ular bitta ishni qildi: <b>bilimni biznes bilan bog‘ladi</b></div>
         <div class="chain">${ch.map((c, i) => `${i ? `<span class="ca" style="animation-delay:${1.6 + i * .75 - .3}s">→</span>` : ""}<span class="cb" style="animation-delay:${1.6 + i * .75}s">${c}</span>`).join("")}</div>`);
-      ch.forEach((_, i) => at(28200 + 750 + 1600 + i * 750, () => sfx("pop"))); });
+      ch.forEach((_, i) => at(750 + 1600 + i * 750, () => sfx("pop"))); });
     at(35600, () => { sfx("swell"); rate = 680;
       sc(`<div class="l2" style="font-size:2.8vh;color:#ddd;animation-delay:0s">Bugun ular bilan bog‘liq kompaniyalarning yillik daromadi:</div>
         <div style="display:flex;gap:8vw;margin-top:4vh"><div><div class="money" id="m1">0</div><div class="ml">MIT bitiruvchilari kompaniyalari</div></div><div><div class="money" id="m2" style="color:#f7c948">0</div><div class="ml">Stanfordga bog‘liq kompaniyalar</div></div></div>
         <svg class="chart" viewBox="0 0 600 120"><polyline class="dr" pathLength="1" points="0,115 80,112 160,106 240,98 320,84 400,64 460,44 520,24 600,4" fill="none" stroke="#3ee6c4" stroke-width="3"/></svg>`);
-      const t0 = performance.now() + 1000; (function f(t) { const k = Math.min(1, Math.max(0, (t - t0) / 2800)); const e = 1 - Math.pow(1 - k, 3); const a = $("#m1"), b = $("#m2"); if (!a) return;
-        a.textContent = (1.9 * e).toFixed(1).replace(".", ",") + " trln $"; b.textContent = (2.7 * e).toFixed(1).replace(".", ",") + " trln $"; if (k < 1) requestAnimationFrame(f); })(performance.now()); sfx("riser", 3.6); });
+      at(900, () => { const t0 = performance.now(); (function f(t) { const k = Math.min(1, Math.max(0, (t - t0) / 2800)); const e = 1 - Math.pow(1 - k, 3); const a = $("#m1"), b = $("#m2");
+        if (!a) { if (performance.now() - t0 < 3000) requestAnimationFrame(f); return; }
+        a.textContent = (1.9 * e).toFixed(1).replace(".", ",") + " trln $"; b.textContent = (2.7 * e).toFixed(1).replace(".", ",") + " trln $"; if (k < 1) requestAnimationFrame(f); })(performance.now()); });
+      sfx("riser", 3.6); });
     at(43000, () => { rate = 600; sfx("swell"); sc(`<div class="tx" style="font-size:4.2vh;max-width:72vw">Har biri alohida davlat bo‘lganida —<br><b style="color:#3ee6c4">dunyoning 10-yirik iqtisodiyoti</b> bo‘lardi.</div>`); });
     at(48200, () => { rate = 540; sfx("swell"); sc(`<div class="tx" style="font-size:4.6vh">Bu — faqat pul emas.</div><div class="tx" style="font-size:4.6vh;animation-delay:1.8s"><b>Bu — qoidalar, ishonch va bog‘lanishlar.</b></div>`); });
     at(53600, () => { rate = 460; sc(`<div class="l1" style="font-size:6vh;letter-spacing:.3em"><span id="qq"></span></div>`); setTimeout(() => typeIn("#qq", "QANDAY QILIB?", 120), 800); });
